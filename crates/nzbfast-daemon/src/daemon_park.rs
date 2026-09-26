@@ -1209,6 +1209,7 @@ impl Daemon {
         };
         self.park_file_terminal(&job, &id, filed_early, verdict, publish);
         self.park_settle_spares(&job, &id, key, &nzb_path, verdict);
+        self.park_drop_failed_payload(&job, &id, verdict);
         // Coalesced: the record is already durable in history.jsonl (the
         // upsert above), and load_queue resolves a torn queue/history
         // pair in history's favour - the debounced rewrite only drops
@@ -1525,6 +1526,100 @@ impl Daemon {
             && still_filed
         {
             crate::hunt::hunt_request(self, job);
+        }
+    }
+
+    /// GH #92: with `failed_delete_files` on, take a job that has just
+    /// FAILED FOR GOOD off the disk. The history record stays, so the
+    /// failure is still there to read and a retry still works from the
+    /// spooled NZB - it downloads again from scratch, because the
+    /// article journal lived in the directory this removes.
+    ///
+    /// The reporter's Docker install had no unrar to fall back to, so a
+    /// release shape the native unpacker refused failed every day and
+    /// left its volumes behind each time until the disk filled. Keeping
+    /// a failure's files is right by default (a retry, a hand extraction
+    /// or a password unlock all work from them), which is why this is a
+    /// switch and ships off.
+    ///
+    /// Only a TERMINAL failure qualifies - not a tombstone (the user's
+    /// own delete, which has its own files answer), not a job an armed
+    /// auto-retry is about to bring back, and not one a history delete
+    /// already took out while it was being parked. Two failures that
+    /// are waiting on the user keep their files whatever the switch
+    /// says: a password-locked archive (the unlock works on these
+    /// volumes) and a library job (its folder is the user's, not ours).
+    ///
+    /// The removal itself is the history delete's own: the claimant
+    /// check that refuses a directory another record or a queued job
+    /// still names ([`crate::watchlist::settle_may_remove_files`]), then
+    /// [`Self::remove_files_in_custody`]. On a worker thread, because a
+    /// Trash move can take seconds and this runs on the park path.
+    fn park_drop_failed_payload(
+        self: &Arc<Self>,
+        job: &Arc<Mutex<Job>>,
+        id: &str,
+        verdict: ParkVerdict,
+    ) {
+        if !verdict.failed
+            || verdict.tombstone
+            || verdict.armed_auto_retry
+            || !self.failed_delete_files.load(Ordering::Relaxed)
+        {
+            return;
+        }
+        {
+            let g = job.lock_ok();
+            if g.password_required || g.library {
+                return;
+            }
+        }
+        if !self.history.lock_ok().iter().any(|j| Arc::ptr_eq(j, job)) {
+            return;
+        }
+        let d = self.clone();
+        let job = job.clone();
+        let id = id.to_string();
+        std::thread::spawn(move || d.drop_failed_payload_now(&job, &id));
+    }
+
+    /// The worker half of [`Self::park_drop_failed_payload`].
+    fn drop_failed_payload_now(self: &Arc<Self>, job: &Arc<Mutex<Job>>, id: &str) {
+        if !crate::watchlist::settle_may_remove_files(self, id) {
+            let dir = job.lock_ok().out_dir.clone();
+            info!(
+                target: "queue",
+                "{id}: failed, and its files were kept: {} belongs to another \
+                 job too",
+                dir.display()
+            );
+            return;
+        }
+        let (dir, name, filed, tail) = {
+            let g = job.lock_ok();
+            let t = delete_tail(&g, || crate::naming::job_suffix(self, filed_stem(&g)));
+            (g.out_dir.clone(), filed_stem(&g).to_string(), g.filed, t)
+        };
+        let sidecar = self.sidecar_owner();
+        match self.remove_files_in_custody(
+            sidecar.as_ref(),
+            id,
+            name.clone(),
+            dir.clone(),
+            filed,
+            tail,
+        ) {
+            Some(FilesGone::Kept(why)) => {
+                let nzb = job.lock_ok().nzb_path.clone();
+                self.note_delete_kept(&name, &dir, &why, Some(&nzb));
+            }
+            Some(_) => info!(
+                target: "queue",
+                "{id}: failed - removed its files from {} (delete files of \
+                 failed downloads is on)",
+                dir.display()
+            ),
+            None => {}
         }
     }
 
@@ -2623,5 +2718,172 @@ mod park_custody_tests {
         );
 
         let _ = std::fs::remove_dir_all(&dir);
+    }
+}
+
+/// GH #92: `failed_delete_files`. Driven through
+/// [`Daemon::park_drop_failed_payload`] with a record already in
+/// history, which is where `park_gen` calls it from.
+#[cfg(test)]
+mod failed_payload_tests {
+    use super::*;
+    use crate::testutil::test_daemon;
+
+    fn scratch(name: &str) -> crate::testscratch::ScratchDir {
+        crate::testscratch::ScratchDir::attach(&std::env::temp_dir().join(format!(
+            "nzbfast-failed-payload-{}-{name}-{:?}",
+            std::process::id(),
+            std::thread::current().id()
+        )))
+    }
+
+    /// A failed record in history whose folder holds two volumes.
+    fn failed_job(d: &Arc<Daemon>, id: &str, out: &std::path::Path) -> Arc<Mutex<Job>> {
+        std::fs::create_dir_all(out).unwrap();
+        std::fs::write(out.join("rel.part01.rar"), b"volume one").unwrap();
+        std::fs::write(out.join("rel.part02.rar"), b"volume two").unwrap();
+        let job = Arc::new(Mutex::new(crate::testutil::job(serde_json::json!({
+            "nzo_id": id,
+            "name": "Bad.Release",
+            "nzb_path": out.with_extension("nzb").to_string_lossy(),
+            "state": "Queued",
+            "out_dir": out.to_string_lossy(),
+        }))));
+        job.lock_ok().state = JobState::Failed;
+        d.history.lock_ok().push(job.clone());
+        job
+    }
+
+    const FAILED: ParkVerdict = ParkVerdict {
+        failed: true,
+        tombstone: false,
+        armed_auto_retry: false,
+    };
+
+    /// The removal runs on a worker; give it a bounded while.
+    fn gone_within(p: &std::path::Path) -> bool {
+        for _ in 0..200 {
+            if !p.exists() {
+                return true;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+        false
+    }
+
+    /// The worker, if one was spawned, has had long enough to act.
+    fn settle() {
+        std::thread::sleep(std::time::Duration::from_millis(300));
+    }
+
+    #[test]
+    fn on_a_terminal_failure_removes_the_folder_and_keeps_the_record() {
+        let dir = scratch("on");
+        let d = test_daemon(&dir);
+        d.failed_delete_files.store(true, Ordering::Relaxed);
+        let out = crate::naming::out_dir(&d).join("Bad.Release");
+        let job = failed_job(&d, "nzo-fail-on", &out);
+        d.park_drop_failed_payload(&job, "nzo-fail-on", FAILED);
+        assert!(gone_within(&out), "the failed job's folder is still there");
+        assert!(
+            d.history.lock_ok().iter().any(|j| Arc::ptr_eq(j, &job)),
+            "the failure itself must stay in history"
+        );
+        assert!(!d.reserved.lock_ok().contains(&out), "reservation leaked");
+    }
+
+    /// Off is the default, and off keeps everything.
+    #[test]
+    fn off_by_default_keeps_the_files() {
+        let dir = scratch("off");
+        let d = test_daemon(&dir);
+        assert!(
+            !d.failed_delete_files.load(Ordering::Relaxed),
+            "must ship off"
+        );
+        let out = crate::naming::out_dir(&d).join("Bad.Release");
+        let job = failed_job(&d, "nzo-fail-off", &out);
+        d.park_drop_failed_payload(&job, "nzo-fail-off", FAILED);
+        settle();
+        assert!(out.join("rel.part01.rar").exists());
+    }
+
+    /// Everything that is not a failure for good, or that is waiting on
+    /// the user, keeps its files with the switch on.
+    #[test]
+    fn only_a_terminal_unattended_failure_qualifies() {
+        let dir = scratch("gates");
+        let d = test_daemon(&dir);
+        d.failed_delete_files.store(true, Ordering::Relaxed);
+        let root = crate::naming::out_dir(&d);
+        let cases: [(&str, ParkVerdict, fn(&mut Job)); 5] = [
+            (
+                "completed",
+                ParkVerdict {
+                    failed: false,
+                    ..FAILED
+                },
+                |_| {},
+            ),
+            (
+                "tombstone",
+                ParkVerdict {
+                    tombstone: true,
+                    ..FAILED
+                },
+                |_| {},
+            ),
+            (
+                "autoretry",
+                ParkVerdict {
+                    armed_auto_retry: true,
+                    ..FAILED
+                },
+                |_| {},
+            ),
+            ("password", FAILED, |g| g.password_required = true),
+            ("library", FAILED, |g| g.library = true),
+        ];
+        let mut dirs = Vec::new();
+        for (tag, verdict, poke) in cases {
+            let out = root.join(format!("Bad.{tag}"));
+            let id = format!("nzo-gate-{tag}");
+            let job = failed_job(&d, &id, &out);
+            poke(&mut job.lock_ok());
+            d.park_drop_failed_payload(&job, &id, verdict);
+            dirs.push((tag, out));
+        }
+        settle();
+        for (tag, out) in dirs {
+            assert!(
+                out.join("rel.part01.rar").exists(),
+                "{tag}: files were removed"
+            );
+        }
+    }
+
+    /// A folder another record still names is not this failure's to
+    /// remove - the claimant check the history delete takes.
+    #[test]
+    fn a_folder_a_queued_job_shares_is_kept() {
+        let dir = scratch("shared");
+        let d = test_daemon(&dir);
+        d.failed_delete_files.store(true, Ordering::Relaxed);
+        let out = crate::naming::out_dir(&d).join("Bad.Release");
+        let job = failed_job(&d, "nzo-fail-shared", &out);
+        let twin = Arc::new(Mutex::new(crate::testutil::job(serde_json::json!({
+            "nzo_id": "nzo-live-twin",
+            "name": "Bad.Release",
+            "nzb_path": out.with_extension("nzb").to_string_lossy(),
+            "state": "Queued",
+            "out_dir": out.to_string_lossy(),
+        }))));
+        d.queue.lock_ok().push_back(twin);
+        d.park_drop_failed_payload(&job, "nzo-fail-shared", FAILED);
+        settle();
+        assert!(
+            out.join("rel.part01.rar").exists(),
+            "a live job's folder was removed"
+        );
     }
 }

@@ -487,8 +487,15 @@ async fn the_fence_accepts_any_answer_that_is_not_a_bodys() {
 
     // And the shapes that mean a response was dropped upstream: a
     // body's answer arriving where the fence's belongs.
+    //
+    // 223 is in this list since read-only sweep finding 12 (21 Sep
+    // 2026): it is STAT's success, not BODY's, and the rule this fence
+    // shipped with ("the codes a BODY answers with are exactly the ones
+    // rejected here") did not cover the STATs `stat_probe` puts in the
+    // same stream.
     for reply in [
         "222 0 <a@example> body\r\n",
+        "223 0 <a@example> status\r\n",
         "430 no such article\r\n",
         "451 0 <gone@example>\r\n",
     ] {

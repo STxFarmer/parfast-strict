@@ -318,6 +318,7 @@ pub fn test_daemon(dir: &Path) -> Arc<Daemon> {
         skip_samples: std::sync::atomic::AtomicBool::new(false),
         // TODO 332: off by default - see the field's own note.
         repair_defer_long: std::sync::atomic::AtomicBool::new(false),
+        failed_delete_files: std::sync::atomic::AtomicBool::new(false),
         index_max_age_secs: AtomicU64::new(0),
         index_retention: seed_index_retention(&settings_path),
         index_pause_on_download: seed_index_pause_on_download(&settings_path),

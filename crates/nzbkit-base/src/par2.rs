@@ -1137,7 +1137,7 @@ impl Par2Set {
     /// the same exponent carried by both files would be counted twice -
     /// so this exceptional mix is re-settled eagerly below and returned
     /// with nothing deferred.
-    #[allow(clippy::type_complexity)]
+    #[expect(clippy::type_complexity)]
     pub fn parse_deferred(
         inputs: &[&[u8]],
     ) -> (

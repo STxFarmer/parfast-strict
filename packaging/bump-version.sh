@@ -114,8 +114,27 @@ done
 # checksum. packaging/homebrew/bump-tap.sh does the whole job after the
 # release is published, and pushes it to the tap.
 
+# `cargo update` is what moves the lock, and a lock still naming the previous
+# version is not a cosmetic miss: every documented build line carries
+# `--locked`, so the next push dies at resolution. Its failure used to be
+# discarded (`2>/dev/null || true`), which left a transcript reading as a
+# complete bump. It is kept going - the manifests and the download pages above
+# and below are all still worth rewriting, and the bump is one change - but the
+# failure is printed where it happened and the script exits non-zero at the
+# end, so nothing downstream reads a stale lock as a finished bump.
+LOCK_FAILED=""
+lock_update() {
+    label=$1
+    shift
+    if ! out=$(cd "$ROOT" && cargo update -q "$@" 2>&1); then
+        echo "✗ cargo update ($label) failed - that lock did NOT move to $NEW:" >&2
+        printf '%s\n' "$out" | sed 's/^/    /' >&2
+        LOCK_FAILED="$LOCK_FAILED $label"
+    fi
+}
+
 if command -v cargo >/dev/null 2>&1; then
-    (cd "$ROOT" && cargo update -q -p nzbfast -p nzbfast-core -p nzbfast-unpack -p nzbfast-meta -p nzbfast-engine -p nzbfast-daemon -p nzbfast-tasks -p nzbfast-api -p nzbtray -p parfast 2>/dev/null) || true
+    lock_update Cargo.lock -p nzbfast -p nzbfast-core -p nzbfast-unpack -p nzbfast-meta -p nzbfast-engine -p nzbfast-daemon -p nzbfast-tasks -p nzbfast-api -p nzbtray -p parfast
     # And the DETACHED workspace's own lock, which the line above cannot
     # reach: `[patch]` and package resolution both apply from a workspace
     # ROOT, and apps/parfast has one of its own. Every cargo line for that
@@ -126,8 +145,8 @@ if command -v cargo >/dev/null 2>&1; then
     # exactly, and `tools/detached-lock-gate.py` is what catches it before
     # the push; this line is what stops it happening.
     if [ -f "$ROOT/apps/parfast/Cargo.toml" ]; then
-        (cd "$ROOT" && cargo update -q --manifest-path apps/parfast/Cargo.toml \
-            -p parfast-session -p parfast-ffi 2>/dev/null) || true
+        lock_update apps/parfast/Cargo.lock --manifest-path apps/parfast/Cargo.toml \
+            -p parfast-session -p parfast-ffi
     fi
 fi
 
@@ -186,3 +205,12 @@ echo "URLs: commit Cargo.toml without them and the published page 404s every"
 echo "button the moment the release goes live (v1.1.1, v1.1.3)."
 echo "  verify: tools/check-site-version.sh --tree"
 echo "reminder: run packaging/homebrew/bump-tap.sh --push AFTER the release is published"
+if [ -n "$LOCK_FAILED" ]; then
+    echo "" >&2
+    echo "✗ NOT a complete bump: the lock did not move for:$LOCK_FAILED" >&2
+    echo "    The manifests and pages above ARE rewritten. Fix what cargo said, then run" >&2
+    echo "    the failed line by hand (cargo update -p <crate> ...); a push from this tree" >&2
+    echo "    dies at --locked resolution, and tools/detached-lock-gate.py refuses the" >&2
+    echo "    apps/parfast lock." >&2
+    exit 1
+fi

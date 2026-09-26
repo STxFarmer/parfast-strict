@@ -721,6 +721,18 @@ fn declared_by_name(dir: &Path, fold: bool, p: &Path, declared_names: &HashSet<S
 /// candidate index must be kept out of the spent sweep, because its
 /// path no longer exists and naming it would have the caller delete a
 /// file this repair already moved.
+///
+/// AND THE PUBLISH LOOP'S FAILURE ARM OWES THE SAME RULE, which it did
+/// not pay until read-only sweep finding 1 (21 Sep 2026): a failed
+/// `rename` unlinks the source, which is right for a rebuild temp -
+/// this repair wrote it and nothing else wants it - and is a data loss
+/// for a donor, whose path is the ONLY good copy of those bytes on
+/// disk. A cross-device rename through a symlinked destination, an ACL
+/// on the target's parent or a Windows share lock on the target all
+/// land in that arm; and if the adoption was what made the set
+/// repairable, the retry then had nothing left to adopt. The caller
+/// keeps a set of these paths (`donor_temps`) and unlinks only what is
+/// not in it.
 pub(super) struct WholeMatches {
     /// (donor path, target index), in donor-path order - the same shape
     /// the rebuild temps are landed in, so one loop lands both.

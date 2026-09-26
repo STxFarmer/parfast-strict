@@ -553,6 +553,7 @@ pub fn restore_ui_and_index_settings(daemon: &Arc<Daemon>, saved: &serde_json::M
         ("rename_from_nzb", &daemon.rename.from_nzb),
         ("skip_samples", &daemon.skip_samples),
         ("repair_defer_long", &daemon.repair_defer_long),
+        ("failed_delete_files", &daemon.failed_delete_files),
     ] {
         if let Some(v) = saved.get(key).and_then(Value::as_bool) {
             field.store(v, Ordering::Relaxed);

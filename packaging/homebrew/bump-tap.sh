@@ -68,10 +68,24 @@ sha_of() {
         exit 1
     fi
     if command -v sha256sum >/dev/null 2>&1; then
-        sha256sum "$WORK/$asset" | cut -d' ' -f1
+        sum=$(sha256sum "$WORK/$asset" | cut -d' ' -f1)
     else
-        shasum -a 256 "$WORK/$asset" | cut -d' ' -f1
+        sum=$(shasum -a 256 "$WORK/$asset" | cut -d' ' -f1)
     fi
+    # The hasher being on PATH says nothing about it working, and this is a
+    # pipeline with no pipefail under `sh`, so a hasher that failed or printed
+    # nothing arrives here as an EMPTY string. Written into the formula that is
+    # `sha256 ""`, and the "did the sha land" guard further down greps for the
+    # very value it was handed - so an empty one is satisfied by the line it
+    # just wrote. Refuse anything that is not 64 lowercase hex characters.
+    case "$sum" in
+        *[!0-9a-f]*|"") sum="" ;;
+    esac
+    if [ "${#sum}" -ne 64 ]; then
+        echo "hashing $asset did not produce a sha256 (64 hex characters) - refusing to write one into the formula" >&2
+        exit 1
+    fi
+    printf '%s\n' "$sum"
 }
 
 MAC_ASSET="nzbfast-$VERSION-macos-universal.zip"

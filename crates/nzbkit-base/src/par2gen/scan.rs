@@ -821,7 +821,7 @@ pub(super) fn apriori_scan_lane_width_for(
 
 /// Per-block (MD5, CRC32) for `[first, last)` blocks of `f`, each block
 /// zero-padded to `block_size` exactly as the serial scan pads it.
-#[allow(clippy::too_many_arguments)]
+#[expect(clippy::too_many_arguments)]
 pub(super) fn hash_block_range(
     f: &std::fs::File,
     path: &Path,
@@ -905,7 +905,7 @@ pub(super) fn scan_lane_blocks(block_size: u64) -> usize {
 /// in the lane that really had it. An 8-worker test over a shared
 /// handle (`par2gen_tests`, agrees-with-one-reader) covers this and has
 /// passed on a real Win11 box.
-#[allow(clippy::too_many_arguments)]
+#[expect(clippy::too_many_arguments)]
 pub(super) fn scan_parallel_positional(
     f: &std::fs::File,
     path: &Path,
@@ -1170,7 +1170,7 @@ pub(super) fn scan_mapped(
 /// an eight-MiB slice. This supersedes the huge-block fallback, which
 /// allocated one full block per concurrent file and read every payload byte
 /// twice.
-#[allow(clippy::too_many_arguments)]
+#[expect(clippy::too_many_arguments)]
 pub(super) fn scan_parallel_streamed(
     f: &mut std::fs::File,
     path: &Path,

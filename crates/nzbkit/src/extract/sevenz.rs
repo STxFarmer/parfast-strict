@@ -2356,22 +2356,60 @@ mod tests {
         for i in 0..3 {
             put(i, 0, chunk);
         }
+        // Part 1's SECOND article, before the tail. Since 702718687
+        // (TODO 118.2 (b)) a 7z head whose size is one bare claim parks
+        // instead of attaching, and on the download path the second
+        // article repeating the claim is what brings the trust. Without
+        // it here part 1 is still Unknown at the wait below, which then
+        // answered `None` and waited for nothing: the body feed raced
+        // the parse, and while the parse sits on the end header the
+        // watermark reads EOF, so the pacing below passed every chunk
+        // and part 1 crossed the 8 MB cap before `arm_trim` - a correct
+        // held-bytes-cap demote, then 30 s per chunk pacing a dead
+        // decoder. Native hardware won that race in about a millisecond;
+        // qemu-user, where the one-shot parse runs as cold translated
+        // code while the hot feed loop does not, lost it every night.
+        put(0, chunk, 2 * chunk);
         let last = parts[2].len();
         put(2, last.saturating_sub(chunk * 2).max(chunk), last);
-        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(30);
-        while std::time::Instant::now() < deadline {
-            match sevenz_ctl(&ex, 0) {
-                Some(c) if c.trim_ok.load(Ordering::Relaxed) => break,
-                Some(_) => std::thread::sleep(std::time::Duration::from_millis(1)),
-                None => break,
+        // ONE bound over the whole feed. The per-step waits below are 30 s
+        // EACH, and with ~96 chunks that is ~48 minutes in aggregate against
+        // a 300 s harness cap: measured at load ~63 the sweep was KILLED at
+        // the cap, which reports as a timeout and reads exactly like a
+        // deadlock. The honest run is under a second, so this is ~100x that
+        // and still well short of the cap, and a box slow enough to trip it
+        // fails HERE, saying what it was waiting for.
+        let overall = std::time::Instant::now() + std::time::Duration::from_secs(120);
+        let deadline = overall.min(std::time::Instant::now() + std::time::Duration::from_secs(30));
+        // Part 1 MUST have attached by now, and the container must have
+        // opened: a `None` here used to break out as though the wait were
+        // over, which is how this guard went silently void. Everything
+        // below paces against a watermark that means nothing until the
+        // trim is armed.
+        let opened = loop {
+            let c = sevenz_ctl(&ex, 0).expect(
+                "part 1 never attached - its size trust did not arrive, so \
+                 the wait for the parse would pace nothing",
+            );
+            if c.trim_ok.load(Ordering::Relaxed) {
+                break true;
             }
-        }
+            if std::time::Instant::now() >= deadline {
+                break false;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(1));
+        };
+        assert!(
+            opened,
+            "the container did not open (trim never armed) inside the bound"
+        );
         // Now the bodies, in container order, paced against the engine's
         // read position so the decoder stays in touch with the arrivals.
         let part_size = parts[0].len();
         let mut high = 0u64;
         for i in 0..3 {
-            let mut off = chunk;
+            // Part 1's first two chunks went in above.
+            let mut off = if i == 0 { 2 * chunk } else { chunk };
             while off < parts[i].len() {
                 put(i, off, off + chunk);
                 off += chunk;
@@ -2379,15 +2417,36 @@ mod tests {
                 let wait = std::time::Instant::now() + std::time::Duration::from_secs(30);
                 loop {
                     let Some(c) = sevenz_ctl(&ex, i) else { break };
+                    // A demote leaves the ctl in place and its watermark
+                    // frozen, so waiting on it only burns the bound and
+                    // then blames the box. Say what happened instead.
+                    let mode = ex.inner.lock().unwrap().slots[i].mode;
+                    assert!(
+                        !matches!(mode, SlotMode::RarFallback | SlotMode::Discard),
+                        "part {} demoted mid-feed ({mode:?}) at offset {off}: {:?}",
+                        i + 1,
+                        ex.inner.lock().unwrap().slot_fallbacks,
+                    );
                     high = high.max(
                         ex.inner.lock().unwrap().slots[0]
                             .chase
                             .as_ref()
                             .map_or(0, |ch| ch.buf.base()),
                     );
-                    if c.low_water.load(Ordering::Relaxed) + (2 << 20) >= fed
-                        || std::time::Instant::now() > wait
-                    {
+                    let low = c.low_water.load(Ordering::Relaxed);
+                    if low + (2 << 20) >= fed {
+                        break;
+                    }
+                    assert!(
+                        std::time::Instant::now() < overall,
+                        "feed not finished inside the overall bound: part {} offset {off} \
+                         of {}, decoder read position (low_water) {low} against {fed} fed, \
+                         trim watermark {high} - the box is too loaded to pace the decoder, \
+                         or the decoder has stopped reading",
+                        i + 1,
+                        parts[i].len(),
+                    );
+                    if std::time::Instant::now() > wait {
                         break;
                     }
                     std::thread::sleep(std::time::Duration::from_millis(1));

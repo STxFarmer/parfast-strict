@@ -3974,6 +3974,9 @@ mod tests {
     fn rar15_40_volume_sequence_incremental_split_rejects_a_broken_chain() {
         let read = |name: &str| std::fs::read(rar15_40_fixture(name)).unwrap();
 
+        // A continuation belonging to a DIFFERENT member. Its name is not
+        // what refuses it (GH #92, see the rename test below); the member
+        // it belongs to has a different unpacked size, and that does.
         let renamed = vec![
             read("rar300/compressed_multivol_prng_rar300.rar"),
             read("rar300/multivol_oldnaming_rar300.r00"),
@@ -3982,7 +3985,7 @@ mod tests {
         assert!(
             matches!(
                 error,
-                Error::InvalidHeader("RAR 1.5 split entry name changed")
+                Error::InvalidHeader("RAR 1.5 split entry unpacked size changed")
             ),
             "{error:?}"
         );
@@ -3999,6 +4002,89 @@ mod tests {
             ),
             "{error:?}"
         );
+    }
+
+    /// Rewrite the stored name of the first file header in a RAR 1.5-4.x
+    /// volume and re-seal that header's CRC, so the continuation is
+    /// well formed and disagrees with the Start fragment on its name alone.
+    fn rar15_40_rename_first_entry(part: &[u8], new_name: &[u8]) -> Vec<u8> {
+        let mut out = part.to_vec();
+        let mut pos = 7; // the marker block
+        loop {
+            let kind = out[pos + 2];
+            let flags = u16::from_le_bytes([out[pos + 3], out[pos + 4]]);
+            let size = usize::from(u16::from_le_bytes([out[pos + 5], out[pos + 6]]));
+            let add = if flags & 0x8000 != 0 || kind == 0x74 {
+                u32::from_le_bytes(out[pos + 7..pos + 11].try_into().unwrap()) as usize
+            } else {
+                0
+            };
+            if kind != 0x74 {
+                pos += size + add;
+                continue;
+            }
+            assert_eq!(flags & 0x0200, 0, "helper handles plain names only");
+            let name_len = usize::from(u16::from_le_bytes([out[pos + 26], out[pos + 27]]));
+            let name_at = pos + 32 + if flags & 0x0100 != 0 { 8 } else { 0 };
+            out.splice(name_at..name_at + name_len, new_name.iter().copied());
+            let new_size = size - name_len + new_name.len();
+            out[pos + 26..pos + 28].copy_from_slice(&(new_name.len() as u16).to_le_bytes());
+            out[pos + 5..pos + 7].copy_from_slice(&(new_size as u16).to_le_bytes());
+            let crc = crc32fast::hash(&out[pos + 2..pos + new_size]) as u16;
+            out[pos..pos + 2].copy_from_slice(&crc.to_le_bytes());
+            return out;
+        }
+    }
+
+    /// GH #92: a split member whose continuation volumes carry a different
+    /// stored name extracts, under the FIRST fragment's name, byte for byte
+    /// - which is what unrar 7.23 does with the same bytes. One rename
+    /// changes case only and one changes the name's length, on both the
+    /// whole-set walk and the incremental path.
+    #[test]
+    fn rar15_40_split_continuation_with_a_different_name_extracts_under_the_first() {
+        let read = |name: &str| std::fs::read(rar15_40_fixture(name)).unwrap();
+        let original = vec![
+            read("rar300/stored_multivol_rar300.rar"),
+            read("rar300/stored_multivol_rar300.r00"),
+            read("rar300/stored_multivol_rar300.r01"),
+            read("rar300/stored_multivol_rar300.r02"),
+        ];
+        let mut renamed = original.clone();
+        renamed[1] = rar15_40_rename_first_entry(&original[1], b"Stored-volume.txt");
+        renamed[2] = rar15_40_rename_first_entry(&original[2], b"other-name-entirely.bin");
+
+        let parse = |parts: &[Vec<u8>]| -> Vec<rar15_40::Archive> {
+            parts
+                .iter()
+                .map(|part| rar15_40::Archive::parse(part).unwrap())
+                .collect()
+        };
+        let tampered = parse(&renamed);
+        // The rename really landed: a helper that silently changed nothing
+        // would pass everything below.
+        assert_eq!(
+            tampered[1].files().next().unwrap().name,
+            b"Stored-volume.txt"
+        );
+        assert_eq!(
+            tampered[2].files().next().unwrap().name,
+            b"other-name-entirely.bin"
+        );
+
+        let reference = collect_rar15_40_volumes(&parse(&original), None).unwrap();
+        assert_eq!(reference.len(), 1);
+        assert_eq!(reference[0].name, b"stored-volume.txt");
+
+        let whole = collect_rar15_40_volumes(&tampered, None).unwrap();
+        assert_eq!(whole.len(), 1);
+        assert_eq!(whole[0].name, reference[0].name);
+        assert_eq!(whole[0].data, reference[0].data);
+
+        let (streamed, _) = rar15_40_sequence_collect(&renamed, None).unwrap();
+        assert_eq!(streamed.len(), 1);
+        assert_eq!(streamed[0].0, reference[0].name);
+        assert_eq!(streamed[0].1, reference[0].data);
     }
 
     /// Drive a RAR 5 volume set through the sequence extractor, trickling
@@ -5360,6 +5446,102 @@ mod tests {
         );
     }
 
+    /// Flip the case of the first character of the first file header's
+    /// name in a RAR 5 volume and re-seal that header's CRC32 - the same
+    /// length, so no size field moves.
+    fn rar50_recase_first_entry(part: &[u8]) -> Vec<u8> {
+        fn vint(bytes: &[u8], pos: &mut usize) -> u64 {
+            let mut value = 0u64;
+            let mut shift = 0;
+            loop {
+                let byte = bytes[*pos];
+                *pos += 1;
+                value |= u64::from(byte & 0x7f) << shift;
+                shift += 7;
+                if byte & 0x80 == 0 {
+                    return value;
+                }
+            }
+        }
+        let mut out = part.to_vec();
+        let mut pos = 8; // the RAR 5 signature
+        loop {
+            let start = pos;
+            let mut at = start + 4;
+            let head_size = vint(&out, &mut at) as usize;
+            let head_end = at + head_size;
+            let kind = vint(&out, &mut at);
+            let flags = vint(&out, &mut at);
+            if flags & 0x1 != 0 {
+                vint(&out, &mut at);
+            }
+            let data_size = if flags & 0x2 != 0 {
+                vint(&out, &mut at) as usize
+            } else {
+                0
+            };
+            if kind != 2 {
+                pos = head_end + data_size;
+                continue;
+            }
+            let file_flags = vint(&out, &mut at);
+            vint(&out, &mut at); // unpacked size
+            vint(&out, &mut at); // attributes
+            if file_flags & 0x2 != 0 {
+                at += 4; // mtime
+            }
+            if file_flags & 0x4 != 0 {
+                at += 4; // data CRC32
+            }
+            vint(&out, &mut at); // compression info
+            vint(&out, &mut at); // host OS
+            vint(&out, &mut at); // name length
+            out[at] ^= 0x20;
+            let crc = crc32fast::hash(&out[start + 4..head_end]);
+            out[start..start + 4].copy_from_slice(&crc.to_le_bytes());
+            return out;
+        }
+    }
+
+    /// The RAR 5 twin of the GH #92 rename test: continuations whose
+    /// stored name differs from the Start fragment's extract under the
+    /// first name, as unrar 7.23 extracts the same bytes.
+    #[test]
+    fn rar50_split_continuation_with_a_different_name_extracts_under_the_first() {
+        let read = |name: &str| std::fs::read(rar50_fixture(name)).unwrap();
+        let original: Vec<Vec<u8>> = (1..=5)
+            .map(|n| read(&format!("crc32_multivol.part0{n}.rar")))
+            .collect();
+        let mut renamed = original.clone();
+        renamed[1] = rar50_recase_first_entry(&original[1]);
+        renamed[3] = rar50_recase_first_entry(&original[3]);
+
+        let parse = |parts: &[Vec<u8>]| -> Vec<rar50::Archive> {
+            parts
+                .iter()
+                .map(|part| rar50::Archive::parse(part).unwrap())
+                .collect()
+        };
+        let tampered = parse(&renamed);
+        let first = |archive: &rar50::Archive| archive.files().next().unwrap().name.clone();
+        assert_eq!(first(&tampered[1]), b"Random_16k.bin");
+        assert_eq!(first(&tampered[3]), b"Random_16k.bin");
+
+        let reference = collect_rar50_volumes(&parse(&original), None).unwrap();
+        assert_eq!(reference.len(), 1);
+        assert_eq!(reference[0].name, b"random_16k.bin");
+
+        let whole = collect_rar50_volumes(&tampered, None).unwrap();
+        assert_eq!(whole.len(), 1);
+        assert_eq!(whole[0].name, reference[0].name);
+        assert_eq!(whole[0].data, reference[0].data);
+
+        let (streamed, _) = rar50_sequence_collect(&renamed, None).unwrap();
+        assert_eq!(streamed.len(), 1);
+        assert_eq!(streamed[0].0, reference[0].name);
+        assert_eq!(streamed[0].1, reference[0].data);
+    }
+
     /// A continuation that disagrees with the Start fragment must abort
     /// the decode with the SAME error the whole-set walk raises, even
     /// though the incremental path has already emitted bytes by then -
@@ -5370,7 +5552,9 @@ mod tests {
         let read = |name: &str| std::fs::read(rar50_fixture(name)).unwrap();
 
         // A continuation belonging to a DIFFERENT member: every header is
-        // well formed and CRC-valid, the chain is not.
+        // well formed and CRC-valid, the chain is not. Its name is not what
+        // refuses it (GH #92, see the rename test below); its compression
+        // info is.
         let renamed = vec![
             read("multivol.part1.rar"),
             read("solid_multivol.part02.rar"),
@@ -5379,7 +5563,7 @@ mod tests {
         assert!(
             matches!(
                 error,
-                Error::InvalidHeader("RAR 5 split entry name changed")
+                Error::InvalidHeader("RAR 5 split entry compression info changed")
             ),
             "{error:?}"
         );

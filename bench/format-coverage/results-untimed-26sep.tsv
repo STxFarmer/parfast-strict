@@ -1,0 +1,321 @@
+# box=fleet-untimed-box load1=30.1 wall_trusted=False reps=5 nzbfast=nzbfast (release) sevenz=/opt/homebrew/bin/7zz tar=/usr/bin/bsdtar
+LEG text-zip-deflate nzbfast-b rep=1 status=ok wall_s=untrusted cpu_s=0.090 rss_mb=19.4 ins=1035873546 rc=0
+LEG text-zip-deflate 7zz rep=1 status=ok wall_s=untrusted cpu_s=0.220 rss_mb=4.7 ins=1874437572 rc=0
+LEG text-zip-deflate bsdtar rep=1 status=ok wall_s=untrusted cpu_s=0.080 rss_mb=3.2 ins=798632174 rc=0
+LEG text-zip-deflate nzbfast-a rep=1 status=ok wall_s=untrusted cpu_s=0.090 rss_mb=19.4 ins=1035325797 rc=0
+LEG text-zip-deflate 7zz rep=2 status=ok wall_s=untrusted cpu_s=0.220 rss_mb=4.8 ins=1877889769 rc=0
+LEG text-zip-deflate bsdtar rep=2 status=ok wall_s=untrusted cpu_s=0.080 rss_mb=3.2 ins=803917716 rc=0
+LEG text-zip-deflate nzbfast-a rep=2 status=ok wall_s=untrusted cpu_s=0.090 rss_mb=19.3 ins=1035938826 rc=0
+LEG text-zip-deflate nzbfast-b rep=2 status=ok wall_s=untrusted cpu_s=0.090 rss_mb=18.6 ins=1035737095 rc=0
+LEG text-zip-deflate bsdtar rep=3 status=ok wall_s=untrusted cpu_s=0.080 rss_mb=3.1 ins=797669933 rc=0
+LEG text-zip-deflate nzbfast-a rep=3 status=ok wall_s=untrusted cpu_s=0.090 rss_mb=19.4 ins=1036135303 rc=0
+LEG text-zip-deflate nzbfast-b rep=3 status=ok wall_s=untrusted cpu_s=0.100 rss_mb=19.4 ins=1036639773 rc=0
+LEG text-zip-deflate 7zz rep=3 status=ok wall_s=untrusted cpu_s=0.220 rss_mb=4.8 ins=1877774478 rc=0
+LEG text-zip-deflate nzbfast-a rep=4 status=ok wall_s=untrusted cpu_s=0.100 rss_mb=19.5 ins=1038143132 rc=0
+LEG text-zip-deflate nzbfast-b rep=4 status=ok wall_s=untrusted cpu_s=0.090 rss_mb=18.6 ins=1035727981 rc=0
+LEG text-zip-deflate 7zz rep=4 status=ok wall_s=untrusted cpu_s=0.220 rss_mb=4.7 ins=1877551474 rc=0
+LEG text-zip-deflate bsdtar rep=4 status=ok wall_s=untrusted cpu_s=0.080 rss_mb=3.2 ins=798446387 rc=0
+LEG text-zip-deflate nzbfast-b rep=5 status=ok wall_s=untrusted cpu_s=0.080 rss_mb=19.5 ins=1036378558 rc=0
+LEG text-zip-deflate 7zz rep=5 status=ok wall_s=untrusted cpu_s=0.220 rss_mb=4.8 ins=1877257874 rc=0
+LEG text-zip-deflate bsdtar rep=5 status=ok wall_s=untrusted cpu_s=0.080 rss_mb=3.1 ins=802070449 rc=0
+LEG text-zip-deflate nzbfast-a rep=5 status=ok wall_s=untrusted cpu_s=0.100 rss_mb=19.5 ins=1036294171 rc=0
+LEG text-zip-store nzbfast-b rep=1 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=19.2 ins=148482363 rc=0
+LEG text-zip-store 7zz rep=1 status=ok wall_s=untrusted cpu_s=0.010 rss_mb=3.8 ins=126198574 rc=0
+LEG text-zip-store bsdtar rep=1 status=ok wall_s=untrusted cpu_s=0.050 rss_mb=3.0 ins=603016338 rc=0
+LEG text-zip-store nzbfast-a rep=1 status=ok wall_s=untrusted cpu_s=0.010 rss_mb=19.2 ins=148975415 rc=0
+LEG text-zip-store 7zz rep=2 status=ok wall_s=untrusted cpu_s=0.010 rss_mb=3.9 ins=127013539 rc=0
+LEG text-zip-store bsdtar rep=2 status=ok wall_s=untrusted cpu_s=0.050 rss_mb=3.0 ins=602016648 rc=0
+LEG text-zip-store nzbfast-a rep=2 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=19.3 ins=148896894 rc=0
+LEG text-zip-store nzbfast-b rep=2 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=19.4 ins=149069909 rc=0
+LEG text-zip-store bsdtar rep=3 status=ok wall_s=untrusted cpu_s=0.050 rss_mb=3.0 ins=610490817 rc=0
+LEG text-zip-store nzbfast-a rep=3 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=19.3 ins=148246357 rc=0
+LEG text-zip-store nzbfast-b rep=3 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=19.3 ins=150861295 rc=0
+LEG text-zip-store 7zz rep=3 status=ok wall_s=untrusted cpu_s=0.010 rss_mb=3.8 ins=127349624 rc=0
+LEG text-zip-store nzbfast-a rep=4 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=19.3 ins=149806639 rc=0
+LEG text-zip-store nzbfast-b rep=4 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=19.3 ins=149085986 rc=0
+LEG text-zip-store 7zz rep=4 status=ok wall_s=untrusted cpu_s=0.010 rss_mb=3.9 ins=127277928 rc=0
+LEG text-zip-store bsdtar rep=4 status=ok wall_s=untrusted cpu_s=0.050 rss_mb=3.0 ins=616152877 rc=0
+LEG text-zip-store nzbfast-b rep=5 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=19.3 ins=148784907 rc=0
+LEG text-zip-store 7zz rep=5 status=ok wall_s=untrusted cpu_s=0.010 rss_mb=3.9 ins=128120879 rc=0
+LEG text-zip-store bsdtar rep=5 status=ok wall_s=untrusted cpu_s=0.060 rss_mb=3.0 ins=620170099 rc=0
+LEG text-zip-store nzbfast-a rep=5 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=19.4 ins=148255238 rc=0
+LEG text-7z-lzma2 nzbfast-b rep=1 status=ok wall_s=untrusted cpu_s=0.440 rss_mb=143.1 ins=2922364776 rc=0
+LEG text-7z-lzma2 7zz rep=1 status=ok wall_s=untrusted cpu_s=0.320 rss_mb=81.1 ins=2285951529 rc=0
+LEG text-7z-lzma2 bsdtar rep=1 status=ok wall_s=untrusted cpu_s=0.440 rss_mb=35.0 ins=2583780352 rc=0
+LEG text-7z-lzma2 nzbfast-a rep=1 status=ok wall_s=untrusted cpu_s=0.430 rss_mb=143.2 ins=2921399627 rc=0
+LEG text-7z-lzma2 7zz rep=2 status=ok wall_s=untrusted cpu_s=0.320 rss_mb=81.1 ins=2286577167 rc=0
+LEG text-7z-lzma2 bsdtar rep=2 status=ok wall_s=untrusted cpu_s=0.440 rss_mb=35.0 ins=2584507386 rc=0
+LEG text-7z-lzma2 nzbfast-a rep=2 status=ok wall_s=untrusted cpu_s=0.430 rss_mb=143.3 ins=2921151643 rc=0
+LEG text-7z-lzma2 nzbfast-b rep=2 status=ok wall_s=untrusted cpu_s=0.430 rss_mb=143.3 ins=2921243075 rc=0
+LEG text-7z-lzma2 bsdtar rep=3 status=ok wall_s=untrusted cpu_s=0.440 rss_mb=35.0 ins=2583839339 rc=0
+LEG text-7z-lzma2 nzbfast-a rep=3 status=ok wall_s=untrusted cpu_s=0.430 rss_mb=143.1 ins=2922070059 rc=0
+LEG text-7z-lzma2 nzbfast-b rep=3 status=ok wall_s=untrusted cpu_s=0.430 rss_mb=143.2 ins=2922741363 rc=0
+LEG text-7z-lzma2 7zz rep=3 status=ok wall_s=untrusted cpu_s=0.320 rss_mb=81.1 ins=2287789479 rc=0
+LEG text-7z-lzma2 nzbfast-a rep=4 status=ok wall_s=untrusted cpu_s=0.430 rss_mb=143.1 ins=2921454592 rc=0
+LEG text-7z-lzma2 nzbfast-b rep=4 status=ok wall_s=untrusted cpu_s=0.430 rss_mb=143.2 ins=2921237514 rc=0
+LEG text-7z-lzma2 7zz rep=4 status=ok wall_s=untrusted cpu_s=0.330 rss_mb=81.2 ins=2286705143 rc=0
+LEG text-7z-lzma2 bsdtar rep=4 status=ok wall_s=untrusted cpu_s=0.450 rss_mb=35.0 ins=2584245575 rc=0
+LEG text-7z-lzma2 nzbfast-b rep=5 status=ok wall_s=untrusted cpu_s=0.410 rss_mb=142.9 ins=2920228899 rc=0
+LEG text-7z-lzma2 7zz rep=5 status=ok wall_s=untrusted cpu_s=0.330 rss_mb=81.1 ins=2285702339 rc=0
+LEG text-7z-lzma2 bsdtar rep=5 status=ok wall_s=untrusted cpu_s=0.450 rss_mb=35.0 ins=2579163372 rc=0
+LEG text-7z-lzma2 nzbfast-a rep=5 status=ok wall_s=untrusted cpu_s=0.430 rss_mb=143.2 ins=2921945524 rc=0
+LEG text-tar nzbfast-b rep=1 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=14.0 ins=191882405 rc=0
+LEG text-tar 7zz rep=1 status=ok wall_s=untrusted cpu_s=0.010 rss_mb=3.7 ins=106715991 rc=0
+LEG text-tar bsdtar rep=1 status=ok wall_s=untrusted cpu_s=0.050 rss_mb=2.8 ins=569930426 rc=0
+LEG text-tar nzbfast-a rep=1 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=13.9 ins=191334386 rc=0
+LEG text-tar 7zz rep=2 status=ok wall_s=untrusted cpu_s=0.010 rss_mb=3.7 ins=107231851 rc=0
+LEG text-tar bsdtar rep=2 status=ok wall_s=untrusted cpu_s=0.070 rss_mb=2.8 ins=565656847 rc=0
+LEG text-tar nzbfast-a rep=2 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=13.9 ins=190229463 rc=0
+LEG text-tar nzbfast-b rep=2 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=13.9 ins=190700864 rc=0
+LEG text-tar bsdtar rep=3 status=ok wall_s=untrusted cpu_s=0.050 rss_mb=2.8 ins=566498814 rc=0
+LEG text-tar nzbfast-a rep=3 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=14.0 ins=191319170 rc=0
+LEG text-tar nzbfast-b rep=3 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=13.8 ins=192421027 rc=0
+LEG text-tar 7zz rep=3 status=ok wall_s=untrusted cpu_s=0.010 rss_mb=3.7 ins=107045652 rc=0
+LEG text-tar nzbfast-a rep=4 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=14.0 ins=192912733 rc=0
+LEG text-tar nzbfast-b rep=4 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=13.8 ins=192942477 rc=0
+LEG text-tar 7zz rep=4 status=ok wall_s=untrusted cpu_s=0.010 rss_mb=3.7 ins=107620956 rc=0
+LEG text-tar bsdtar rep=4 status=ok wall_s=untrusted cpu_s=0.050 rss_mb=2.8 ins=581798474 rc=0
+LEG text-tar nzbfast-b rep=5 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=13.8 ins=189468440 rc=0
+LEG text-tar 7zz rep=5 status=ok wall_s=untrusted cpu_s=0.010 rss_mb=3.7 ins=108550742 rc=0
+LEG text-tar bsdtar rep=5 status=ok wall_s=untrusted cpu_s=0.050 rss_mb=2.8 ins=563649857 rc=0
+LEG text-tar nzbfast-a rep=5 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=13.8 ins=190342241 rc=0
+LEG text-tar-gz nzbfast-b rep=1 status=FAILED wall_s=untrusted cpu_s=0.010 rss_mb=13.4 ins=61552255 rc=0 mismatch='missing text.dat'
+LEG text-tar-gz 7zz rep=1 status=FAILED wall_s=untrusted cpu_s=0.220 rss_mb=4.6 ins=1876906541 rc=0 mismatch='missing text.dat'
+LEG text-tar-gz bsdtar rep=1 status=ok wall_s=untrusted cpu_s=0.070 rss_mb=2.9 ins=723892047 rc=0
+LEG text-tar-gz nzbfast-a rep=1 status=FAILED wall_s=untrusted cpu_s=0.000 rss_mb=13.3 ins=61367376 rc=0 mismatch='missing text.dat'
+LEG text-tar-gz 7zz rep=2 status=FAILED wall_s=untrusted cpu_s=0.220 rss_mb=4.6 ins=1879142076 rc=0 mismatch='missing text.dat'
+LEG text-tar-gz bsdtar rep=2 status=ok wall_s=untrusted cpu_s=0.070 rss_mb=2.9 ins=721596916 rc=0
+LEG text-tar-gz nzbfast-a rep=2 status=FAILED wall_s=untrusted cpu_s=0.000 rss_mb=13.3 ins=61960240 rc=0 mismatch='missing text.dat'
+LEG text-tar-gz nzbfast-b rep=2 status=FAILED wall_s=untrusted cpu_s=0.000 rss_mb=13.5 ins=62474915 rc=0 mismatch='missing text.dat'
+LEG text-tar-gz bsdtar rep=3 status=ok wall_s=untrusted cpu_s=0.070 rss_mb=2.9 ins=723591113 rc=0
+LEG text-tar-gz nzbfast-a rep=3 status=FAILED wall_s=untrusted cpu_s=0.000 rss_mb=13.2 ins=63068064 rc=0 mismatch='missing text.dat'
+LEG text-tar-gz nzbfast-b rep=3 status=FAILED wall_s=untrusted cpu_s=0.000 rss_mb=13.3 ins=61411814 rc=0 mismatch='missing text.dat'
+LEG text-tar-gz 7zz rep=3 status=FAILED wall_s=untrusted cpu_s=0.220 rss_mb=4.6 ins=1880867458 rc=0 mismatch='missing text.dat'
+LEG text-tar-gz nzbfast-a rep=4 status=FAILED wall_s=untrusted cpu_s=0.000 rss_mb=13.4 ins=61608612 rc=0 mismatch='missing text.dat'
+LEG text-tar-gz nzbfast-b rep=4 status=FAILED wall_s=untrusted cpu_s=0.000 rss_mb=13.4 ins=61703796 rc=0 mismatch='missing text.dat'
+LEG text-tar-gz 7zz rep=4 status=FAILED wall_s=untrusted cpu_s=0.220 rss_mb=4.6 ins=1879680728 rc=0 mismatch='missing text.dat'
+LEG text-tar-gz bsdtar rep=4 status=ok wall_s=untrusted cpu_s=0.070 rss_mb=2.9 ins=723050741 rc=0
+LEG text-tar-gz nzbfast-b rep=5 status=FAILED wall_s=untrusted cpu_s=0.000 rss_mb=13.4 ins=61555573 rc=0 mismatch='missing text.dat'
+LEG text-tar-gz 7zz rep=5 status=FAILED wall_s=untrusted cpu_s=0.220 rss_mb=4.6 ins=1879013868 rc=0 mismatch='missing text.dat'
+LEG text-tar-gz bsdtar rep=5 status=ok wall_s=untrusted cpu_s=0.070 rss_mb=2.9 ins=723070516 rc=0
+LEG text-tar-gz nzbfast-a rep=5 status=FAILED wall_s=untrusted cpu_s=0.000 rss_mb=13.2 ins=63646987 rc=0 mismatch='missing text.dat'
+LEG binary-zip-deflate nzbfast-b rep=1 status=ok wall_s=untrusted cpu_s=0.030 rss_mb=19.4 ins=196707962 rc=0
+LEG binary-zip-deflate 7zz rep=1 status=ok wall_s=untrusted cpu_s=0.030 rss_mb=4.8 ins=243796882 rc=0
+LEG binary-zip-deflate bsdtar rep=1 status=ok wall_s=untrusted cpu_s=0.050 rss_mb=3.1 ins=627115035 rc=0
+LEG binary-zip-deflate nzbfast-a rep=1 status=ok wall_s=untrusted cpu_s=0.030 rss_mb=19.4 ins=196732902 rc=0
+LEG binary-zip-deflate 7zz rep=2 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=4.8 ins=247456008 rc=0
+LEG binary-zip-deflate bsdtar rep=2 status=ok wall_s=untrusted cpu_s=0.050 rss_mb=3.1 ins=640951269 rc=0
+LEG binary-zip-deflate nzbfast-a rep=2 status=ok wall_s=untrusted cpu_s=0.030 rss_mb=19.4 ins=196284374 rc=0
+LEG binary-zip-deflate nzbfast-b rep=2 status=ok wall_s=untrusted cpu_s=0.030 rss_mb=19.3 ins=196712631 rc=0
+LEG binary-zip-deflate bsdtar rep=3 status=ok wall_s=untrusted cpu_s=0.050 rss_mb=3.1 ins=623991622 rc=0
+LEG binary-zip-deflate nzbfast-a rep=3 status=ok wall_s=untrusted cpu_s=0.030 rss_mb=19.5 ins=196946251 rc=0
+LEG binary-zip-deflate nzbfast-b rep=3 status=ok wall_s=untrusted cpu_s=0.030 rss_mb=19.5 ins=197010972 rc=0
+LEG binary-zip-deflate 7zz rep=3 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=4.8 ins=242096557 rc=0
+LEG binary-zip-deflate nzbfast-a rep=4 status=ok wall_s=untrusted cpu_s=0.030 rss_mb=18.4 ins=196331626 rc=0
+LEG binary-zip-deflate nzbfast-b rep=4 status=ok wall_s=untrusted cpu_s=0.030 rss_mb=19.4 ins=196746235 rc=0
+LEG binary-zip-deflate 7zz rep=4 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=4.7 ins=246048890 rc=0
+LEG binary-zip-deflate bsdtar rep=4 status=ok wall_s=untrusted cpu_s=0.050 rss_mb=3.1 ins=636965100 rc=0
+LEG binary-zip-deflate nzbfast-b rep=5 status=ok wall_s=untrusted cpu_s=0.030 rss_mb=19.4 ins=196682099 rc=0
+LEG binary-zip-deflate 7zz rep=5 status=ok wall_s=untrusted cpu_s=0.030 rss_mb=4.7 ins=247220999 rc=0
+LEG binary-zip-deflate bsdtar rep=5 status=ok wall_s=untrusted cpu_s=0.060 rss_mb=3.1 ins=640876092 rc=0
+LEG binary-zip-deflate nzbfast-a rep=5 status=ok wall_s=untrusted cpu_s=0.030 rss_mb=19.5 ins=197891825 rc=0
+LEG binary-zip-store nzbfast-b rep=1 status=ok wall_s=untrusted cpu_s=0.010 rss_mb=19.3 ins=148058214 rc=0
+LEG binary-zip-store 7zz rep=1 status=ok wall_s=untrusted cpu_s=0.010 rss_mb=3.8 ins=125277849 rc=0
+LEG binary-zip-store bsdtar rep=1 status=ok wall_s=untrusted cpu_s=0.050 rss_mb=3.0 ins=592588123 rc=0
+LEG binary-zip-store nzbfast-a rep=1 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=19.3 ins=148972581 rc=0
+LEG binary-zip-store 7zz rep=2 status=ok wall_s=untrusted cpu_s=0.010 rss_mb=3.8 ins=126137052 rc=0
+LEG binary-zip-store bsdtar rep=2 status=ok wall_s=untrusted cpu_s=0.050 rss_mb=3.0 ins=606097915 rc=0
+LEG binary-zip-store nzbfast-a rep=2 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=19.2 ins=150528670 rc=0
+LEG binary-zip-store nzbfast-b rep=2 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=19.3 ins=148239561 rc=0
+LEG binary-zip-store bsdtar rep=3 status=ok wall_s=untrusted cpu_s=0.050 rss_mb=3.0 ins=611532619 rc=0
+LEG binary-zip-store nzbfast-a rep=3 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=19.3 ins=149003576 rc=0
+LEG binary-zip-store nzbfast-b rep=3 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=19.2 ins=148376167 rc=0
+LEG binary-zip-store 7zz rep=3 status=ok wall_s=untrusted cpu_s=0.010 rss_mb=3.8 ins=126697835 rc=0
+LEG binary-zip-store nzbfast-a rep=4 status=ok wall_s=untrusted cpu_s=0.010 rss_mb=19.3 ins=147967067 rc=0
+LEG binary-zip-store nzbfast-b rep=4 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=19.3 ins=149038739 rc=0
+LEG binary-zip-store 7zz rep=4 status=ok wall_s=untrusted cpu_s=0.010 rss_mb=3.8 ins=126748480 rc=0
+LEG binary-zip-store bsdtar rep=4 status=ok wall_s=untrusted cpu_s=0.050 rss_mb=3.0 ins=603648788 rc=0
+LEG binary-zip-store nzbfast-b rep=5 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=19.3 ins=148771449 rc=0
+LEG binary-zip-store 7zz rep=5 status=ok wall_s=untrusted cpu_s=0.010 rss_mb=3.8 ins=125960625 rc=0
+LEG binary-zip-store bsdtar rep=5 status=ok wall_s=untrusted cpu_s=0.050 rss_mb=3.0 ins=599592253 rc=0
+LEG binary-zip-store nzbfast-a rep=5 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=19.3 ins=148513060 rc=0
+LEG binary-7z-lzma2 nzbfast-b rep=1 status=ok wall_s=untrusted cpu_s=0.050 rss_mb=250.8 ins=358649747 rc=0
+LEG binary-7z-lzma2 7zz rep=1 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=136.1 ins=163576265 rc=0
+LEG binary-7z-lzma2 bsdtar rep=1 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=35.0 ins=246307686 rc=0
+LEG binary-7z-lzma2 nzbfast-a rep=1 status=ok wall_s=untrusted cpu_s=0.050 rss_mb=250.8 ins=358683244 rc=0
+LEG binary-7z-lzma2 7zz rep=2 status=ok wall_s=untrusted cpu_s=0.030 rss_mb=136.0 ins=163341644 rc=0
+LEG binary-7z-lzma2 bsdtar rep=2 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=35.0 ins=245998565 rc=0
+LEG binary-7z-lzma2 nzbfast-a rep=2 status=ok wall_s=untrusted cpu_s=0.040 rss_mb=250.7 ins=357778812 rc=0
+LEG binary-7z-lzma2 nzbfast-b rep=2 status=ok wall_s=untrusted cpu_s=0.050 rss_mb=250.8 ins=358644459 rc=0
+LEG binary-7z-lzma2 bsdtar rep=3 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=35.0 ins=246552151 rc=0
+LEG binary-7z-lzma2 nzbfast-a rep=3 status=ok wall_s=untrusted cpu_s=0.050 rss_mb=250.8 ins=359021095 rc=0
+LEG binary-7z-lzma2 nzbfast-b rep=3 status=ok wall_s=untrusted cpu_s=0.050 rss_mb=250.7 ins=358346364 rc=0
+LEG binary-7z-lzma2 7zz rep=3 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=136.0 ins=163256909 rc=0
+LEG binary-7z-lzma2 nzbfast-a rep=4 status=ok wall_s=untrusted cpu_s=0.050 rss_mb=250.7 ins=358344185 rc=0
+LEG binary-7z-lzma2 nzbfast-b rep=4 status=ok wall_s=untrusted cpu_s=0.050 rss_mb=250.8 ins=358108922 rc=0
+LEG binary-7z-lzma2 7zz rep=4 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=136.0 ins=163263987 rc=0
+LEG binary-7z-lzma2 bsdtar rep=4 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=35.0 ins=246494192 rc=0
+LEG binary-7z-lzma2 nzbfast-b rep=5 status=ok wall_s=untrusted cpu_s=0.050 rss_mb=250.7 ins=357865003 rc=0
+LEG binary-7z-lzma2 7zz rep=5 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=136.0 ins=163195140 rc=0
+LEG binary-7z-lzma2 bsdtar rep=5 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=35.0 ins=247304271 rc=0
+LEG binary-7z-lzma2 nzbfast-a rep=5 status=ok wall_s=untrusted cpu_s=0.040 rss_mb=250.7 ins=358233598 rc=0
+LEG binary-tar nzbfast-b rep=1 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=14.0 ins=193544217 rc=0
+LEG binary-tar 7zz rep=1 status=ok wall_s=untrusted cpu_s=0.010 rss_mb=3.7 ins=108089449 rc=0
+LEG binary-tar bsdtar rep=1 status=ok wall_s=untrusted cpu_s=0.050 rss_mb=2.8 ins=580457530 rc=0
+LEG binary-tar nzbfast-a rep=1 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=14.0 ins=194445190 rc=0
+LEG binary-tar 7zz rep=2 status=ok wall_s=untrusted cpu_s=0.010 rss_mb=3.7 ins=107414435 rc=0
+LEG binary-tar bsdtar rep=2 status=ok wall_s=untrusted cpu_s=0.050 rss_mb=2.8 ins=569064413 rc=0
+LEG binary-tar nzbfast-a rep=2 status=ok wall_s=untrusted cpu_s=0.030 rss_mb=13.8 ins=193356413 rc=0
+LEG binary-tar nzbfast-b rep=2 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=14.0 ins=193678794 rc=0
+LEG binary-tar bsdtar rep=3 status=ok wall_s=untrusted cpu_s=0.050 rss_mb=2.8 ins=580118488 rc=0
+LEG binary-tar nzbfast-a rep=3 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=13.9 ins=193536957 rc=0
+LEG binary-tar nzbfast-b rep=3 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=13.8 ins=193086207 rc=0
+LEG binary-tar 7zz rep=3 status=ok wall_s=untrusted cpu_s=0.010 rss_mb=3.7 ins=107930420 rc=0
+LEG binary-tar nzbfast-a rep=4 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=13.8 ins=191453646 rc=0
+LEG binary-tar nzbfast-b rep=4 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=13.7 ins=192009404 rc=0
+LEG binary-tar 7zz rep=4 status=ok wall_s=untrusted cpu_s=0.010 rss_mb=3.7 ins=108173842 rc=0
+LEG binary-tar bsdtar rep=4 status=ok wall_s=untrusted cpu_s=0.050 rss_mb=2.8 ins=583768129 rc=0
+LEG binary-tar nzbfast-b rep=5 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=13.9 ins=192615572 rc=0
+LEG binary-tar 7zz rep=5 status=ok wall_s=untrusted cpu_s=0.010 rss_mb=3.7 ins=107476938 rc=0
+LEG binary-tar bsdtar rep=5 status=ok wall_s=untrusted cpu_s=0.040 rss_mb=2.8 ins=580551625 rc=0
+LEG binary-tar nzbfast-a rep=5 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=13.7 ins=191625377 rc=0
+LEG binary-tar-gz nzbfast-b rep=1 status=FAILED wall_s=untrusted cpu_s=0.010 rss_mb=13.4 ins=62298587 rc=0 mismatch='missing binary.dat'
+LEG binary-tar-gz 7zz rep=1 status=FAILED wall_s=untrusted cpu_s=0.030 rss_mb=4.6 ins=246435333 rc=0 mismatch='missing binary.dat'
+LEG binary-tar-gz bsdtar rep=1 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=2.9 ins=205215567 rc=0
+LEG binary-tar-gz nzbfast-a rep=1 status=FAILED wall_s=untrusted cpu_s=0.000 rss_mb=13.4 ins=62063188 rc=0 mismatch='missing binary.dat'
+LEG binary-tar-gz 7zz rep=2 status=FAILED wall_s=untrusted cpu_s=0.030 rss_mb=4.6 ins=246048159 rc=0 mismatch='missing binary.dat'
+LEG binary-tar-gz bsdtar rep=2 status=ok wall_s=untrusted cpu_s=0.010 rss_mb=2.9 ins=205526301 rc=0
+LEG binary-tar-gz nzbfast-a rep=2 status=FAILED wall_s=untrusted cpu_s=0.000 rss_mb=13.3 ins=61894686 rc=0 mismatch='missing binary.dat'
+LEG binary-tar-gz nzbfast-b rep=2 status=FAILED wall_s=untrusted cpu_s=0.000 rss_mb=13.3 ins=63372256 rc=0 mismatch='missing binary.dat'
+LEG binary-tar-gz bsdtar rep=3 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=3.0 ins=206579882 rc=0
+LEG binary-tar-gz nzbfast-a rep=3 status=FAILED wall_s=untrusted cpu_s=0.000 rss_mb=13.2 ins=60226898 rc=0 mismatch='missing binary.dat'
+LEG binary-tar-gz nzbfast-b rep=3 status=FAILED wall_s=untrusted cpu_s=0.000 rss_mb=13.4 ins=61727132 rc=0 mismatch='missing binary.dat'
+LEG binary-tar-gz 7zz rep=3 status=FAILED wall_s=untrusted cpu_s=0.030 rss_mb=4.6 ins=250074809 rc=0 mismatch='missing binary.dat'
+LEG binary-tar-gz nzbfast-a rep=4 status=FAILED wall_s=untrusted cpu_s=0.000 rss_mb=13.3 ins=61706369 rc=0 mismatch='missing binary.dat'
+LEG binary-tar-gz nzbfast-b rep=4 status=FAILED wall_s=untrusted cpu_s=0.000 rss_mb=13.3 ins=61607949 rc=0 mismatch='missing binary.dat'
+LEG binary-tar-gz 7zz rep=4 status=FAILED wall_s=untrusted cpu_s=0.020 rss_mb=4.6 ins=246430144 rc=0 mismatch='missing binary.dat'
+LEG binary-tar-gz bsdtar rep=4 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=2.9 ins=206208613 rc=0
+LEG binary-tar-gz nzbfast-b rep=5 status=FAILED wall_s=untrusted cpu_s=0.000 rss_mb=13.3 ins=61678340 rc=0 mismatch='missing binary.dat'
+LEG binary-tar-gz 7zz rep=5 status=FAILED wall_s=untrusted cpu_s=0.030 rss_mb=4.6 ins=244508215 rc=0 mismatch='missing binary.dat'
+LEG binary-tar-gz bsdtar rep=5 status=ok wall_s=untrusted cpu_s=0.020 rss_mb=2.9 ins=205190562 rc=0
+LEG binary-tar-gz nzbfast-a rep=5 status=FAILED wall_s=untrusted cpu_s=0.000 rss_mb=13.4 ins=62461313 rc=0 mismatch='missing binary.dat'
+LEG many-small-zip-deflate nzbfast-b rep=1 status=ok wall_s=untrusted cpu_s=1.610 rss_mb=48.2 ins=11657824429 rc=0
+LEG many-small-zip-deflate 7zz rep=1 status=ok wall_s=untrusted cpu_s=0.520 rss_mb=5.5 ins=5030940143 rc=0
+LEG many-small-zip-deflate bsdtar rep=1 status=ok wall_s=untrusted cpu_s=0.480 rss_mb=4.1 ins=4858610864 rc=0
+LEG many-small-zip-deflate nzbfast-a rep=1 status=ok wall_s=untrusted cpu_s=1.820 rss_mb=43.1 ins=11620236921 rc=0
+LEG many-small-zip-deflate 7zz rep=2 status=ok wall_s=untrusted cpu_s=0.510 rss_mb=5.5 ins=4807913599 rc=0
+LEG many-small-zip-deflate bsdtar rep=2 status=ok wall_s=untrusted cpu_s=0.510 rss_mb=4.0 ins=4948444952 rc=0
+LEG many-small-zip-deflate nzbfast-a rep=2 status=ok wall_s=untrusted cpu_s=1.630 rss_mb=44.4 ins=12038789867 rc=0
+LEG many-small-zip-deflate nzbfast-b rep=2 status=ok wall_s=untrusted cpu_s=1.580 rss_mb=41.6 ins=11919766335 rc=0
+LEG many-small-zip-deflate bsdtar rep=3 status=ok wall_s=untrusted cpu_s=0.470 rss_mb=4.0 ins=4966002130 rc=0
+LEG many-small-zip-deflate nzbfast-a rep=3 status=ok wall_s=untrusted cpu_s=1.700 rss_mb=44.1 ins=11841594729 rc=0
+LEG many-small-zip-deflate nzbfast-b rep=3 status=ok wall_s=untrusted cpu_s=1.870 rss_mb=46.2 ins=11760971481 rc=0
+LEG many-small-zip-deflate 7zz rep=3 status=ok wall_s=untrusted cpu_s=0.610 rss_mb=5.5 ins=5034690281 rc=0
+LEG many-small-zip-deflate nzbfast-a rep=4 status=ok wall_s=untrusted cpu_s=1.970 rss_mb=45.1 ins=12238098309 rc=0
+LEG many-small-zip-deflate nzbfast-b rep=4 status=ok wall_s=untrusted cpu_s=1.660 rss_mb=42.0 ins=12098005744 rc=0
+LEG many-small-zip-deflate 7zz rep=4 status=ok wall_s=untrusted cpu_s=0.540 rss_mb=5.6 ins=5239365043 rc=0
+LEG many-small-zip-deflate bsdtar rep=4 status=ok wall_s=untrusted cpu_s=0.480 rss_mb=4.0 ins=5078585309 rc=0
+LEG many-small-zip-deflate nzbfast-b rep=5 status=ok wall_s=untrusted cpu_s=1.630 rss_mb=47.0 ins=12258241670 rc=0
+LEG many-small-zip-deflate 7zz rep=5 status=ok wall_s=untrusted cpu_s=0.560 rss_mb=5.6 ins=5302843048 rc=0
+LEG many-small-zip-deflate bsdtar rep=5 status=ok wall_s=untrusted cpu_s=0.570 rss_mb=4.0 ins=5439233597 rc=0
+LEG many-small-zip-deflate nzbfast-a rep=5 status=ok wall_s=untrusted cpu_s=1.650 rss_mb=42.3 ins=12405473279 rc=0
+LEG many-small-zip-store nzbfast-b rep=1 status=ok wall_s=untrusted cpu_s=1.510 rss_mb=41.9 ins=11389907933 rc=0
+LEG many-small-zip-store 7zz rep=1 status=ok wall_s=untrusted cpu_s=0.410 rss_mb=5.5 ins=3900414012 rc=0
+LEG many-small-zip-store bsdtar rep=1 status=ok wall_s=untrusted cpu_s=0.480 rss_mb=4.0 ins=5106426279 rc=0
+LEG many-small-zip-store nzbfast-a rep=1 status=ok wall_s=untrusted cpu_s=1.710 rss_mb=39.7 ins=11298131107 rc=0
+LEG many-small-zip-store 7zz rep=2 status=ok wall_s=untrusted cpu_s=0.420 rss_mb=5.5 ins=4275129026 rc=0
+LEG many-small-zip-store bsdtar rep=2 status=ok wall_s=untrusted cpu_s=0.520 rss_mb=4.0 ins=5265466234 rc=0
+LEG many-small-zip-store nzbfast-a rep=2 status=ok wall_s=untrusted cpu_s=1.640 rss_mb=39.7 ins=11838525282 rc=0
+LEG many-small-zip-store nzbfast-b rep=2 status=ok wall_s=untrusted cpu_s=1.520 rss_mb=39.7 ins=11269867104 rc=0
+LEG many-small-zip-store bsdtar rep=3 status=ok wall_s=untrusted cpu_s=0.500 rss_mb=4.0 ins=5337544943 rc=0
+LEG many-small-zip-store nzbfast-a rep=3 status=ok wall_s=untrusted cpu_s=1.590 rss_mb=38.8 ins=11301230963 rc=0
+LEG many-small-zip-store nzbfast-b rep=3 status=ok wall_s=untrusted cpu_s=1.960 rss_mb=40.1 ins=11338756563 rc=0
+LEG many-small-zip-store 7zz rep=3 status=ok wall_s=untrusted cpu_s=0.420 rss_mb=5.5 ins=4289718726 rc=0
+LEG many-small-zip-store nzbfast-a rep=4 status=ok wall_s=untrusted cpu_s=1.610 rss_mb=40.4 ins=11233367908 rc=0
+LEG many-small-zip-store nzbfast-b rep=4 status=ok wall_s=untrusted cpu_s=1.810 rss_mb=39.1 ins=11712736045 rc=0
+LEG many-small-zip-store 7zz rep=4 status=ok wall_s=untrusted cpu_s=0.380 rss_mb=5.4 ins=3995964584 rc=0
+LEG many-small-zip-store bsdtar rep=4 status=ok wall_s=untrusted cpu_s=0.480 rss_mb=4.0 ins=5100726317 rc=0
+LEG many-small-zip-store nzbfast-b rep=5 status=ok wall_s=untrusted cpu_s=1.610 rss_mb=38.9 ins=11564681564 rc=0
+LEG many-small-zip-store 7zz rep=5 status=ok wall_s=untrusted cpu_s=0.390 rss_mb=5.4 ins=3954614997 rc=0
+LEG many-small-zip-store bsdtar rep=5 status=ok wall_s=untrusted cpu_s=0.530 rss_mb=4.0 ins=5123692104 rc=0
+LEG many-small-zip-store nzbfast-a rep=5 status=ok wall_s=untrusted cpu_s=1.720 rss_mb=41.0 ins=11606729601 rc=0
+LEG many-small-tar nzbfast-b rep=1 status=ok wall_s=untrusted cpu_s=0.900 rss_mb=17.9 ins=8841839443 rc=0
+LEG many-small-tar 7zz rep=1 status=ok wall_s=untrusted cpu_s=0.960 rss_mb=7.8 ins=9372416410 rc=0
+LEG many-small-tar bsdtar rep=1 status=ok wall_s=untrusted cpu_s=1.190 rss_mb=3.0 ins=11872582294 rc=0
+LEG many-small-tar nzbfast-a rep=1 status=ok wall_s=untrusted cpu_s=0.850 rss_mb=18.0 ins=8664384075 rc=0
+LEG many-small-tar 7zz rep=2 status=ok wall_s=untrusted cpu_s=0.900 rss_mb=7.9 ins=9372069291 rc=0
+LEG many-small-tar bsdtar rep=2 status=ok wall_s=untrusted cpu_s=1.150 rss_mb=3.0 ins=11466215679 rc=0
+LEG many-small-tar nzbfast-a rep=2 status=ok wall_s=untrusted cpu_s=0.890 rss_mb=18.0 ins=9236080273 rc=0
+LEG many-small-tar nzbfast-b rep=2 status=ok wall_s=untrusted cpu_s=0.830 rss_mb=18.1 ins=8418517423 rc=0
+LEG many-small-tar bsdtar rep=3 status=ok wall_s=untrusted cpu_s=1.110 rss_mb=2.9 ins=11248391422 rc=0
+LEG many-small-tar nzbfast-a rep=3 status=ok wall_s=untrusted cpu_s=0.890 rss_mb=17.8 ins=8324552260 rc=0
+LEG many-small-tar nzbfast-b rep=3 status=ok wall_s=untrusted cpu_s=0.820 rss_mb=18.0 ins=8362579228 rc=0
+LEG many-small-tar 7zz rep=3 status=ok wall_s=untrusted cpu_s=0.950 rss_mb=7.8 ins=9231467229 rc=0
+LEG many-small-tar nzbfast-a rep=4 status=ok wall_s=untrusted cpu_s=0.830 rss_mb=18.0 ins=8005884141 rc=0
+LEG many-small-tar nzbfast-b rep=4 status=ok wall_s=untrusted cpu_s=0.810 rss_mb=17.8 ins=8320363404 rc=0
+LEG many-small-tar 7zz rep=4 status=ok wall_s=untrusted cpu_s=0.900 rss_mb=7.8 ins=8980583260 rc=0
+LEG many-small-tar bsdtar rep=4 status=ok wall_s=untrusted cpu_s=1.170 rss_mb=3.0 ins=12069875421 rc=0
+LEG many-small-tar nzbfast-b rep=5 status=ok wall_s=untrusted cpu_s=0.900 rss_mb=17.9 ins=8603354070 rc=0
+LEG many-small-tar 7zz rep=5 status=ok wall_s=untrusted cpu_s=0.870 rss_mb=7.6 ins=8871463439 rc=0
+LEG many-small-tar bsdtar rep=5 status=ok wall_s=untrusted cpu_s=1.130 rss_mb=2.9 ins=11082360193 rc=0
+LEG many-small-tar nzbfast-a rep=5 status=ok wall_s=untrusted cpu_s=0.910 rss_mb=17.8 ins=7953450356 rc=0
+LEG many-small-tar-gz nzbfast-b rep=1 status=FAILED wall_s=untrusted cpu_s=0.010 rss_mb=13.4 ins=62184671 rc=0 mismatch='missing d22/f03118'
+LEG many-small-tar-gz 7zz rep=1 status=FAILED wall_s=untrusted cpu_s=0.360 rss_mb=4.6 ins=4019594208 rc=0 mismatch='missing d22/f03118'
+LEG many-small-tar-gz bsdtar rep=1 status=ok wall_s=untrusted cpu_s=1.150 rss_mb=3.1 ins=11199668469 rc=0
+LEG many-small-tar-gz nzbfast-a rep=1 status=FAILED wall_s=untrusted cpu_s=0.000 rss_mb=13.4 ins=62213300 rc=0 mismatch='missing d22/f03118'
+LEG many-small-tar-gz 7zz rep=2 status=FAILED wall_s=untrusted cpu_s=0.360 rss_mb=4.5 ins=4024437027 rc=0 mismatch='missing d22/f03118'
+LEG many-small-tar-gz bsdtar rep=2 status=ok wall_s=untrusted cpu_s=1.140 rss_mb=3.1 ins=11412986826 rc=0
+LEG many-small-tar-gz nzbfast-a rep=2 status=FAILED wall_s=untrusted cpu_s=0.000 rss_mb=13.2 ins=61555798 rc=0 mismatch='missing d22/f03118'
+LEG many-small-tar-gz nzbfast-b rep=2 status=FAILED wall_s=untrusted cpu_s=0.000 rss_mb=13.5 ins=62003373 rc=0 mismatch='missing d22/f03118'
+LEG many-small-tar-gz bsdtar rep=3 status=ok wall_s=untrusted cpu_s=1.100 rss_mb=3.0 ins=10862767584 rc=0
+LEG many-small-tar-gz nzbfast-a rep=3 status=FAILED wall_s=untrusted cpu_s=0.000 rss_mb=13.4 ins=61506705 rc=0 mismatch='missing d22/f03118'
+LEG many-small-tar-gz nzbfast-b rep=3 status=FAILED wall_s=untrusted cpu_s=0.000 rss_mb=13.2 ins=61549127 rc=0 mismatch='missing d22/f03118'
+LEG many-small-tar-gz 7zz rep=3 status=FAILED wall_s=untrusted cpu_s=0.360 rss_mb=4.6 ins=4033193569 rc=0 mismatch='missing d22/f03118'
+LEG many-small-tar-gz nzbfast-a rep=4 status=FAILED wall_s=untrusted cpu_s=0.000 rss_mb=13.3 ins=61998919 rc=0 mismatch='missing d22/f03118'
+LEG many-small-tar-gz nzbfast-b rep=4 status=FAILED wall_s=untrusted cpu_s=0.000 rss_mb=13.4 ins=61541480 rc=0 mismatch='missing d22/f03118'
+LEG many-small-tar-gz 7zz rep=4 status=FAILED wall_s=untrusted cpu_s=0.370 rss_mb=4.6 ins=4032287244 rc=0 mismatch='missing d22/f03118'
+LEG many-small-tar-gz bsdtar rep=4 status=ok wall_s=untrusted cpu_s=1.150 rss_mb=3.1 ins=10920950076 rc=0
+LEG many-small-tar-gz nzbfast-b rep=5 status=FAILED wall_s=untrusted cpu_s=0.000 rss_mb=13.4 ins=62682442 rc=0 mismatch='missing d22/f03118'
+LEG many-small-tar-gz 7zz rep=5 status=FAILED wall_s=untrusted cpu_s=0.370 rss_mb=4.6 ins=4024096266 rc=0 mismatch='missing d22/f03118'
+LEG many-small-tar-gz bsdtar rep=5 status=ok wall_s=untrusted cpu_s=1.300 rss_mb=3.1 ins=11147619526 rc=0
+LEG many-small-tar-gz nzbfast-a rep=5 status=FAILED wall_s=untrusted cpu_s=0.010 rss_mb=13.4 ins=62161514 rc=0 mismatch='missing d22/f03118'
+LEG many-small-7z-solid nzbfast-b rep=1 status=ok wall_s=untrusted cpu_s=0.800 rss_mb=151.7 ins=7586577403 rc=0
+LEG many-small-7z-solid 7zz rep=1 status=ok wall_s=untrusted cpu_s=0.380 rss_mb=70.0 ins=3796311302 rc=0
+LEG many-small-7z-solid bsdtar rep=1 status=ok wall_s=untrusted cpu_s=0.450 rss_mb=35.8 ins=4709773691 rc=0
+LEG many-small-7z-solid nzbfast-a rep=1 status=ok wall_s=untrusted cpu_s=0.820 rss_mb=151.6 ins=8276968639 rc=0
+LEG many-small-7z-solid 7zz rep=2 status=ok wall_s=untrusted cpu_s=0.410 rss_mb=70.1 ins=4195935560 rc=0
+LEG many-small-7z-solid bsdtar rep=2 status=ok wall_s=untrusted cpu_s=0.460 rss_mb=35.8 ins=4778167434 rc=0
+LEG many-small-7z-solid nzbfast-a rep=2 status=ok wall_s=untrusted cpu_s=0.800 rss_mb=151.5 ins=8027492300 rc=0
+LEG many-small-7z-solid nzbfast-b rep=2 status=ok wall_s=untrusted cpu_s=0.880 rss_mb=151.4 ins=8630376536 rc=0
+LEG many-small-7z-solid bsdtar rep=3 status=ok wall_s=untrusted cpu_s=0.450 rss_mb=35.8 ins=4526155978 rc=0
+LEG many-small-7z-solid nzbfast-a rep=3 status=ok wall_s=untrusted cpu_s=0.850 rss_mb=151.7 ins=8035146556 rc=0
+LEG many-small-7z-solid nzbfast-b rep=3 status=ok wall_s=untrusted cpu_s=0.840 rss_mb=151.7 ins=7776417160 rc=0
+LEG many-small-7z-solid 7zz rep=3 status=ok wall_s=untrusted cpu_s=0.410 rss_mb=70.1 ins=4156341365 rc=0
+LEG many-small-7z-solid nzbfast-a rep=4 status=ok wall_s=untrusted cpu_s=0.900 rss_mb=150.6 ins=7812836720 rc=0
+LEG many-small-7z-solid nzbfast-b rep=4 status=ok wall_s=untrusted cpu_s=0.890 rss_mb=151.7 ins=7733869824 rc=0
+LEG many-small-7z-solid 7zz rep=4 status=ok wall_s=untrusted cpu_s=0.390 rss_mb=70.1 ins=3873716577 rc=0
+LEG many-small-7z-solid bsdtar rep=4 status=ok wall_s=untrusted cpu_s=0.430 rss_mb=35.8 ins=4218954504 rc=0
+LEG many-small-7z-solid nzbfast-b rep=5 status=ok wall_s=untrusted cpu_s=1.050 rss_mb=151.7 ins=7884064133 rc=0
+LEG many-small-7z-solid 7zz rep=5 status=ok wall_s=untrusted cpu_s=0.450 rss_mb=70.0 ins=3718405662 rc=0
+LEG many-small-7z-solid bsdtar rep=5 status=ok wall_s=untrusted cpu_s=0.520 rss_mb=35.8 ins=4406497316 rc=0
+LEG many-small-7z-solid nzbfast-a rep=5 status=ok wall_s=untrusted cpu_s=1.010 rss_mb=151.6 ins=7638698661 rc=0
+LEG many-small-7z-nonsolid nzbfast-b rep=1 status=ok wall_s=untrusted cpu_s=2.150 rss_mb=34.9 ins=12906925049 rc=0
+LEG many-small-7z-nonsolid 7zz rep=1 status=ok wall_s=untrusted cpu_s=0.940 rss_mb=5.0 ins=5861996072 rc=0
+LEG many-small-7z-nonsolid bsdtar rep=1 status=ok wall_s=untrusted cpu_s=0.950 rss_mb=4.8 ins=6720139772 rc=0
+LEG many-small-7z-nonsolid nzbfast-a rep=1 status=ok wall_s=untrusted cpu_s=2.110 rss_mb=27.1 ins=12880984253 rc=0
+LEG many-small-7z-nonsolid 7zz rep=2 status=ok wall_s=untrusted cpu_s=0.750 rss_mb=5.0 ins=6068461211 rc=0
+LEG many-small-7z-nonsolid bsdtar rep=2 status=ok wall_s=untrusted cpu_s=0.890 rss_mb=4.8 ins=6753224595 rc=0
+LEG many-small-7z-nonsolid nzbfast-a rep=2 status=ok wall_s=untrusted cpu_s=2.000 rss_mb=34.6 ins=12939748626 rc=0
+LEG many-small-7z-nonsolid nzbfast-b rep=2 status=ok wall_s=untrusted cpu_s=2.260 rss_mb=26.6 ins=13179193856 rc=0
+LEG many-small-7z-nonsolid bsdtar rep=3 status=ok wall_s=untrusted cpu_s=0.860 rss_mb=4.8 ins=6668873240 rc=0
+LEG many-small-7z-nonsolid nzbfast-a rep=3 status=ok wall_s=untrusted cpu_s=2.330 rss_mb=25.0 ins=13113035252 rc=0
+LEG many-small-7z-nonsolid nzbfast-b rep=3 status=ok wall_s=untrusted cpu_s=2.540 rss_mb=35.3 ins=13168237959 rc=0
+LEG many-small-7z-nonsolid 7zz rep=3 status=ok wall_s=untrusted cpu_s=0.810 rss_mb=5.0 ins=5986296057 rc=0
+LEG many-small-7z-nonsolid nzbfast-a rep=4 status=ok wall_s=untrusted cpu_s=2.210 rss_mb=26.9 ins=13184364807 rc=0
+LEG many-small-7z-nonsolid nzbfast-b rep=4 status=ok wall_s=untrusted cpu_s=3.130 rss_mb=34.7 ins=13232808732 rc=0
+LEG many-small-7z-nonsolid 7zz rep=4 status=ok wall_s=untrusted cpu_s=0.920 rss_mb=5.0 ins=6483797940 rc=0
+LEG many-small-7z-nonsolid bsdtar rep=4 status=ok wall_s=untrusted cpu_s=1.000 rss_mb=4.8 ins=7380661545 rc=0
+LEG many-small-7z-nonsolid nzbfast-b rep=5 status=ok wall_s=untrusted cpu_s=2.770 rss_mb=25.1 ins=13595127188 rc=0
+LEG many-small-7z-nonsolid 7zz rep=5 status=ok wall_s=untrusted cpu_s=0.750 rss_mb=5.0 ins=6185264529 rc=0
+LEG many-small-7z-nonsolid bsdtar rep=5 status=ok wall_s=untrusted cpu_s=1.010 rss_mb=4.8 ins=7380480676 rc=0
+LEG many-small-7z-nonsolid nzbfast-a rep=5 status=ok wall_s=untrusted cpu_s=4.060 rss_mb=27.5 ins=13262137237 rc=0

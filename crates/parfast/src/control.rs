@@ -821,6 +821,21 @@ impl CreateMeter {
         }
     }
 
+    /// The create is over: end the `--progress` bar's line, so the
+    /// next thing printed starts on a line of its own. GH #88 reported
+    /// `Doneress: 100.0% [===...]` on the line `-q` leaves - `Done`
+    /// written over the start of `Progress:` - and `Wrote N bytes to
+    /// disk` does the same at the default level. The two-label shape
+    /// is NOT ended here: `Processing:` overprinted by the next full
+    /// line is the reference's own output to the byte (see
+    /// [`Meter::end_line`]), and the one bar exists only behind a
+    /// switch the reference does not have, so it owes no such match.
+    pub fn settled(&self) {
+        if self.unified {
+            self.inner.end_line();
+        }
+    }
+
     /// Where the create stands: the fold's banded fraction, held back by
     /// the hash's when the hash has spoken. See the type doc.
     fn lesser(&self) -> u32 {
@@ -975,6 +990,12 @@ impl CreateWatch for CliWatch {
     fn control(&self) -> CreateControl {
         let sink: Arc<dyn ProgressSink> = self.create.clone();
         CreateControl::new(Some(sink), self.gate.clone())
+    }
+
+    /// The `--progress` bar is ended with a newline; the two-label
+    /// shape is left as it is. See [`CreateMeter::settled`].
+    fn settled(&self) {
+        self.create.settled();
     }
 }
 
@@ -1470,5 +1491,25 @@ mod tests {
         m.inner.end_line();
         m.inner.end_line();
         assert_eq!(text(&buf), "Processing: 50.0%\r\n");
+    }
+
+    /// GH #88: the one bar is ended when the create settles, so `Done`
+    /// cannot land on its line as `Doneress: 100.0%`; the two-label
+    /// shape keeps the reference's overprint; and a create that drew
+    /// nothing owes no blank line.
+    #[test]
+    fn a_settled_create_ends_the_one_bar_and_only_the_one_bar() {
+        let (m, buf) = unified_meter();
+        m.progress(RepairPhase::Fold, 2, 2);
+        m.settled();
+        m.settled();
+        assert!(text(&buf).ends_with("]\r\n"), "{:?}", text(&buf));
+        let (m, buf) = create_meter(false);
+        m.progress(RepairPhase::Fold, 2, 2);
+        m.settled();
+        assert_eq!(text(&buf), "Processing: 100.0%\r");
+        let (m, buf) = unified_meter();
+        m.settled();
+        assert_eq!(text(&buf), "");
     }
 }

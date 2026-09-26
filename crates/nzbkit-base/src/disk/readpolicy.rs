@@ -464,6 +464,13 @@ fn unix_network_fs(path: &Path) -> bool {
             // it. Dropping it stops this arm compiling on the targets
             // where the type differs (32-bit linux, musl, android), so
             // the allow is the portable form, not a mute button.
+            // Not #[expect]: the lint fires only where `f_type` is
+            // ALREADY i64 - the 64-bit gnu targets CI lints - and on
+            // every other linux the conversion is real, so an #[expect]
+            // would go unfulfilled there and redden a build this box
+            // cannot run. A cfg predicate cannot say it either: the
+            // width comes from the target's libc, not from a cfg this
+            // file could enumerate without guessing.
             #[allow(clippy::useless_conversion)]
             let magic = i64::try_from(st.f_type);
             magic.is_ok_and(|t| NETWORK.contains(&t))
@@ -1148,7 +1155,7 @@ mod tests {
     // test in either direction, which is what the doc above says it is
     // for. Rewriting it into something clippy reads as dynamic would
     // delete the pin and keep the shape.
-    #[allow(clippy::assertions_on_constants)]
+    #[expect(clippy::assertions_on_constants)]
     fn the_drop_behind_default_is_a_measured_constant() {
         assert!(
             DROP_BEHIND_DEFAULT,

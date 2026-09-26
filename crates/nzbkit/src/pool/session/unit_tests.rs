@@ -1347,9 +1347,16 @@ async fn the_top_up_stops_at_the_live_target_and_holds_one_at_the_wire_cap() {
 /// it is positional evidence off a socket we cannot check, so it is
 /// dropped (merging it could push the union to a false unanimous
 /// Missing). Echoed, it is the same authoritative answer the original
-/// would have got - merged into the article's mask, and terminal the
-/// moment the union covers every live server, without waiting for the
-/// original to walk the rest of the ladder.
+/// would have got - merged into the article's mask.
+///
+/// WHETHER THAT MERGE MAY GO TERMINAL depends on `recheck_430`, and
+/// until read-only sweep finding 2 (21 Sep 2026) it always did. It must
+/// not while the hold mechanism is on: `claim_done` puts the id in
+/// `done`, and the original's next pass through `handle_missing` then
+/// returns at the `done` guard, which sits BEFORE the late re-ask is
+/// taken. So the early verdict did not merely arrive early, it CANCELLED
+/// the re-ask - on exactly the cold-backend shape `recheck_430` was
+/// measured for. Both arms are pinned below.
 #[tokio::test]
 async fn a_duplicates_refusal_counts_only_when_the_socket_can_be_checked() {
     let servers = vec![(server("s"), PoolConfig::default())];
@@ -1388,11 +1395,49 @@ async fn a_duplicates_refusal_counts_only_when_the_socket_can_be_checked() {
     assert_eq!(sh.pending.load(Ordering::Acquire), 1);
 
     // The same refusal with the id echoed back: authoritative, merged,
-    // and on a single-server run that union is already unanimous.
+    // and on a single-server run that union is already unanimous - but
+    // the mechanism is ON by default, so the fold is all it may do. The
+    // original is still out reading and still owns the verdict and the
+    // re-ask.
+    assert!(cfg.recheck_430, "the default arm is the one under test");
     let mut sess = SessionState::from_inflight([dup()].into_iter().collect());
     sh.charge_wire();
     handle_missing(
         &cfg,
+        ctx,
+        &sh,
+        &tx,
+        PooledBuf::unpooled(Vec::new()),
+        true,
+        false,
+        &mut sess,
+    )
+    .await;
+    assert!(
+        rx.try_recv().is_err(),
+        "a unanimous INFLIGHT fold must not pre-empt the original's re-ask"
+    );
+    assert_eq!(
+        sh.inflight.lock_ok().get("<d@x>").map(|i| i.tried_430),
+        Some(1),
+        "the authoritative refusal is still merged - the original picks it up"
+    );
+    assert_eq!(
+        sh.pending.load(Ordering::Acquire),
+        1,
+        "the article is not terminal: nothing has asked the backbone twice yet"
+    );
+
+    // With the hold mechanism OFF there is no re-ask to pre-empt, so
+    // M2c.4's early verdict is correct and still fires.
+    let no_recheck = PoolConfig {
+        recheck_430: false,
+        ..PoolConfig::default()
+    };
+    let mut sess = SessionState::from_inflight([dup()].into_iter().collect());
+    sh.charge_wire();
+    handle_missing(
+        &no_recheck,
         ctx,
         &sh,
         &tx,

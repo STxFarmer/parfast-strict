@@ -3223,6 +3223,8 @@ html.macapp .setrail{top:calc(14px + var(--tbh,32px))}
     <input type="checkbox" id="s_par_cleanup" onchange="setCfg('par_cleanup',this.checked?1:0)"></div>
   <div class="row"><label data-i18n="set.watchdir.repairdefer">Wait before a long repair<span class="badge next" data-i18n="badge.next">applies from the next download</span><span class="hint" data-i18n="set.watchdir.repairdefer.hint">some downloads need a slow repair, taking minutes rather than seconds, because the recovery files are themselves damaged. With this on, such a download goes back to the end of the queue once before it starts, so you have a chance to see what is coming and remove it if you would rather not wait. It only waits once: next time round it repairs, because a download that never repairs while nobody is watching is worse than a slow one. Nothing has been written to disk at that point, so nothing is lost either way. Off by default</span></label>
     <input type="checkbox" id="s_repair_defer_long" onchange="setCfg('repair_defer_long',this.checked?1:0)"></div>
+  <div class="row"><label data-i18n="set.watchdir.faileddelete">Delete files of failed downloads<span class="badge live" data-i18n="badge.live">live</span><span class="hint" data-i18n="set.watchdir.faileddelete.hint">when a download fails for good, remove what it left in the download folder, so failures do not pile up and fill the disk. The failure stays in History and can still be retried, but a retry downloads everything again. Downloads waiting for a password, and ones that are about to be retried automatically, keep their files. Off by default, because the leftover files are what a retry or a hand extraction works from</span></label>
+    <input type="checkbox" id="s_failed_delete_files" onchange="setCfg('failed_delete_files',this.checked?1:0)"></div>
   <div class="row"><label data-i18n="set.watchdir.cleanup">Cleanup after download<span class="hint" data-i18n="set.watchdir.cleanup.hint">file extensions or name patterns deleted from a job's folder once it completes successfully, e.g. sfv, srr, url, *sample*, Subs/*; empty = off. Recovery files have their own switch above</span></label>
     <input class="txt" id="s_cleanup_exts" placeholder="sfv, srr, url" onchange="setCfg('cleanup_exts',this.value)"></div>
   <div class="row"><label data-i18n="set.watchdir.pwprompt">When an archive needs a password<span class="badge live" data-i18n="badge.live">live</span><span class="hint" data-i18n="set.watchdir.pwprompt.hint">"ask right away" prompts the moment a running download turns out to be password-protected, so you can type it while it keeps downloading; "ask when finished" waits until the download completes and offers the 🔑 unlock; "never ask" completes the download quietly with the archive left packed in its folder for you to extract by hand. Set password on the download itself works in every mode</span></label>
@@ -18160,6 +18162,7 @@ async function loadSettings(){
    ['s_rename_episode_titles',c.rename_episode_titles],
    ['s_skip_samples',c.skip_samples],
    ['s_repair_defer_long',c.repair_defer_long],
+   ['s_failed_delete_files',c.failed_delete_files],
    ['s_rename_junk',c.rename_junk],['s_rename_media_only',c.rename_media_only],
    // Not a rename-sub either: it is the OTHER answer to what a finished
    // download is called, so it stays readable with auto-rename off.

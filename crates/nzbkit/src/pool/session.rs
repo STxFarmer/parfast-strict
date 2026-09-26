@@ -1474,18 +1474,33 @@ pub(super) async fn handle_missing(
         // already requeued) and declare Missing the moment
         // the union goes unanimous, instead of waiting for
         // the original to walk the rest of the ladder.
-        // STATED LIMIT, TODO 315. The INFLIGHT arm below still declares
-        // Missing without consulting `Shared::take_recheck`: the hold is
-        // per-article state living on the ORIGINAL's `Work`, which is on
-        // another worker's stack while it reads, so there is nothing here
-        // to charge or requeue. The original still walks its own
-        // `handle_missing` and still takes its re-ask, so the article is
-        // asked again - what is early is the VERDICT the consumer saw.
-        // Closing that means moving the hold onto the inflight entry so
-        // one helper owns every unanimous verdict, which is a change to
-        // where the state lives rather than a guard - so it is left
-        // named here instead of half-done. The QUEUED arm below is a
-        // different question and IS answered: the hold is right there on
+        // TODO 315, AND THE STATED LIMIT WAS WRONG - read-only sweep
+        // finding 2 (21 Sep 2026). This comment used to say the INFLIGHT
+        // arm's early Missing cost nothing but earliness, because "the
+        // original still walks its own `handle_missing` and still takes
+        // its re-ask". It does not. `claim_done` below puts the id in
+        // `done`, and the original's very next pass through this
+        // function returns at the `done.lock_ok().contains(w.ord)` guard
+        // further down - which is BEFORE the re-ask is taken. So a
+        // mirror dup going live-unanimous while the owner was still
+        // reading made Missing terminal with no re-ask at all, which is
+        // exactly the cold-backend case `recheck_430` was measured for
+        // (231 of 250 refused articles served nine minutes later off the
+        // same account); and if the original's BODY actually returned
+        // 222, `claim_done` had already succeeded for the dup and the
+        // body was discarded as a lost race.
+        //
+        // So while the hold mechanism is ON, this arm FOLDS and does not
+        // terminalize: the evidence goes onto the inflight entry, where
+        // the original picks it up (`w.tried_430 |= inf.tried_430`, a
+        // few lines down) and walks the whole ladder with it, re-ask
+        // included. That costs the M2c.4 early verdict the length of the
+        // owner's own read - and on a wholly dead post the owner is
+        // reading a refusal too, so it is one pass, which is the pass
+        // `recheck_430` exists to buy. With the mechanism OFF there is
+        // no re-ask to protect and the early verdict is correct, so that
+        // configuration keeps it. The QUEUED arm below is a different
+        // question and was already answered: the hold is right there on
         // the queued `Work` to read.
         let live = shared.live_mask();
         let mut unanimous = false;
@@ -1493,11 +1508,15 @@ pub(super) async fn handle_missing(
         // WHY it went terminal (27 Aug sweep finding 8): live-unanimous
         // is not the same claim as gone - see `Shared::missing_cause`.
         let mut verdict_mask = 0u32;
+        // Whether the unanimity in hand was reached on the INFLIGHT
+        // entry - see the fold-only rule above.
+        let mut inflight_unanimous = false;
         {
             let mut m = shared.inflight.lock_ok();
             if let Some(inf) = m.get_mut(&w.id) {
                 inf.tried_430 |= ctx.group_bits;
                 unanimous = inf.tried_430 & live == live;
+                inflight_unanimous = unanimous;
                 verdict_mask = inf.tried_430;
             }
         }
@@ -1551,7 +1570,13 @@ pub(super) async fn handle_missing(
                 verdict_mask = qi.tried_430;
             }
         }
-        if unanimous && shared.claim_done(&w.id, w.ord) {
+        // `!inflight_unanimous` is the fold-only rule above: an early
+        // verdict taken off the INFLIGHT entry is the one that can
+        // pre-empt the owner's re-ask. Unanimity reached on the QUEUED
+        // copy is untouched - that arm consults `recheck::holding`
+        // itself and the owner is not mid-read.
+        if unanimous && !(cfg.recheck_430 && inflight_unanimous) && shared.claim_done(&w.id, w.ord)
+        {
             let td = shared.take_takedown(&w.id) != 0;
             let cause = shared.missing_cause(verdict_mask, td);
             let _ = out.send(FetchOutcome::Missing { id: w.id, cause }).await;

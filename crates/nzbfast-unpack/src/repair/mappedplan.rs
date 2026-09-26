@@ -95,7 +95,24 @@ pub(super) fn plan_mapped_repair(
     let mut in_place: Vec<usize> = Vec::new();
     let mut prefixes: Vec<Option<nzbkit::par2repair::Md5Resume>> = Vec::new();
     for f in &set.files {
-        let n = f.length.div_ceil(set.block_size) as usize;
+        // In u64 and REFUSED BEFORE THE CAST - read-only sweep finding 7
+        // (21 Sep 2026). `f.length` comes out of the set's FileDesc and
+        // is attacker-controlled, so `as usize` TRUNCATES on the shipped
+        // 32-bit armv7 target: a missing file with no surviving IFSC
+        // (the `f.blocks.len() != n` cross-check below is skipped when
+        // `f.blocks` is empty) then sized `vec![false; n]` off the
+        // truncated figure, `missing_slices` summed the truncated
+        // figure, and the `MAX_REPAIR_DIM` refusal below never fired -
+        // both sides agreeing on the wrong width and the repair running
+        // with a short slice map. The aggregate `total_slices >
+        // MAX_INPUT_SLICES` test at the end of this function is the
+        // same check one cast too late. `nzbkit::par2repair`'s own
+        // `repair_mapped_inner` carries the twin.
+        let n_u64 = f.length.div_ceil(set.block_size);
+        if n_u64 > MAX_INPUT_SLICES as u64 {
+            return None;
+        }
+        let n = n_u64 as usize;
         total_slices += n;
         // THIS set's reports only, the same `slot_set` guard
         // `dupefill::wanted_files` carries and for the identical reason

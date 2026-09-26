@@ -1671,6 +1671,30 @@ impl<'a> DecoderSession<'a> {
                 unfiltered
             }
         };
+        // nzbfast: A MEMBER WITH NO DIGEST STILL HAS A DECLARED LENGTH,
+        // and until 21 Sep 2026 nothing checked it here. Read-only sweep
+        // finding 8: `map_truncated_unverified_payload` turns a decoder
+        // `NeedMoreInput` into `Ok(Vec::new())` when the header carries
+        // neither a FILE CRC32 nor a BLAKE2sp, and
+        // `verify_integrity_with_keys` returns `Ok(())` when neither is
+        // present - so a RAR 5 member declaring a nonzero
+        // `unpacked_size` whose packed stream ends early was WRITTEN OUT
+        // EMPTY and reported as extracted. A digest-carrying member
+        // (every ordinary WinRAR one) cannot reach this: it takes the
+        // `Err` arm of that helper. So the check is exactly the one the
+        // digests would have made if there were any - the length the
+        // header itself declares.
+        if file.data_crc32.is_none()
+            && file.hash.is_none()
+            && decoded.data.len() as u64 != file.unpacked_size
+        {
+            return Err(file.entry_error(
+                "verifying",
+                Error::InvalidHeader(
+                    "RAR 5 member carries no integrity record and decoded short of its                      declared unpacked size",
+                ),
+            ));
+        }
         if solid_archive {
             // Verified and final: reclaim the window buffer's dead front.
             self.decoder.commit_member();
@@ -2743,9 +2767,13 @@ where
                 ));
             }
             validate_split_fragment(file, self.password)?;
-            if file.name != self.pending.name {
-                return Err(Error::InvalidHeader("RAR 5 split entry name changed"));
-            }
+            // A continuation's stored NAME is not compared. unrar does not
+            // compare it either: a set whose later volumes carry a different
+            // name tests clean under unrar 7.23 and extracts under the FIRST
+            // fragment's name, and nzbfast GH #92 reports posted sets refused
+            // with this error. A wrong chain is still refused by the header
+            // checks that follow and by the member's CRC.
+            // (nzbfast-local change, 24 Sep 2026; see VENDORING.md.)
             if file.compression_info != self.compression_info {
                 return Err(Error::InvalidHeader(
                     "RAR 5 split entry compression info changed",
@@ -4441,9 +4469,13 @@ fn validate_split_continuation_refs(
     password: Option<&[u8]>,
 ) -> Result<()> {
     validate_split_fragment(file, password)?;
-    if file.name != pending.name {
-        return Err(Error::InvalidHeader("RAR 5 split entry name changed"));
-    }
+    // A continuation's stored NAME is not compared. unrar does not
+    // compare it either: a set whose later volumes carry a different
+    // name tests clean under unrar 7.23 and extracts under the FIRST
+    // fragment's name, and nzbfast GH #92 reports posted sets refused
+    // with this error. A wrong chain is still refused by the header
+    // checks that follow and by the member's CRC.
+    // (nzbfast-local change, 24 Sep 2026; see VENDORING.md.)
     if file.compression_info != pending.compression_info {
         return Err(Error::InvalidHeader(
             "RAR 5 split entry compression info changed",
@@ -6948,11 +6980,11 @@ mod tests {
         let first = split_fragment_file(b"a.txt", BLOCK_CONTINUES_IN_NEXT_VOLUME);
         let pending = PendingSplitRefs::new(&first, 0, 0);
 
+        // A renamed continuation is ACCEPTED: unrar does not compare the
+        // name either, and refusing it was nzbfast GH #92. Every other
+        // property below still has to agree.
         let renamed = split_fragment_file(b"b.txt", BLOCK_CONTINUED_FROM_PREVIOUS_VOLUME);
-        assert!(matches!(
-            validate_split_continuation_refs(&pending, &renamed, None),
-            Err(Error::InvalidHeader(_))
-        ));
+        validate_split_continuation_refs(&pending, &renamed, None).unwrap();
 
         let mut new_compression =
             split_fragment_file(b"a.txt", BLOCK_CONTINUED_FROM_PREVIOUS_VOLUME);
@@ -8031,6 +8063,81 @@ mod tests {
         let decoded = file.decoded_data_unverified(&archive, None).unwrap();
 
         assert!(decoded.is_empty());
+    }
+
+    /// nzbfast, read-only sweep finding 8 (21 Sep 2026): the swallow the
+    /// test below pins must not become a SUCCESSFUL EMPTY WRITE. A member
+    /// with no FILE CRC32 and no BLAKE2sp whose packed stream ends early
+    /// decodes to `Ok(Vec::new())` there, `verify_integrity_with_keys`
+    /// has nothing to check, and `write_file_to` used to `write_all` the
+    /// empty buffer and return `Ok` - an extracted-and-empty file over a
+    /// member declaring a nonzero unpacked size. The declared length is
+    /// the one check left when there is no digest, so it is made.
+    #[test]
+    fn a_digestless_member_that_decodes_short_is_not_written_as_success() {
+        // Under the test build's `BUFFERED_DECODE_LIMIT` (1 KiB), so the
+        // member takes the BUFFERED path - which is the one
+        // `write_file_to` and this check live on.
+        let data: Vec<u8> = (0..40u32)
+            .flat_map(|i| format!("compressible line {}\n", i % 7).into_bytes())
+            .collect();
+        let bytes = Rar50Writer::new(WriterOptions {
+            target: crate::ArchiveVersion::Rar50,
+            features: crate::FeatureSet::store_only(),
+            compression_level: None,
+            dictionary_size: None,
+            entropy: crate::Entropy::Os,
+            hash_record: crate::rar50::HashRecord::Crc32Only,
+            optimal_parse: false,
+            adaptive_entropy_blocks: true,
+            write_policy: None,
+            tokenizer_horizon_choice: false,
+            level_five_fallbacks: true,
+            recovery_fold_threads: None,
+        })
+        .compressed_entries(&[CompressedEntry {
+            name: b"short.bin",
+            data: &data,
+            mtime: None,
+            attributes: 0x20,
+            host_os: 3,
+        }])
+        .finish()
+        .unwrap();
+        let archive = Archive::parse(&bytes).unwrap();
+        let whole = archive.files().next().unwrap().clone();
+        assert!(!whole.should_stream_decode(BUFFERED_DECODE_LIMIT));
+
+        // The same member with both integrity records stripped and its
+        // packed stream cut in half: the header is intact, so the
+        // decoder reaches `NeedMoreInput`, which is the exact shape
+        // `map_truncated_unverified_payload` swallows.
+        let mut file = whole.clone();
+        file.data_crc32 = None;
+        file.hash = None;
+        let r = file.block.data_range.clone();
+        file.block.data_range = r.start..(r.start + (r.end - r.start) / 2);
+        file.block.data_size = Some((file.block.data_range.len()) as u64);
+
+        let mut out = Vec::new();
+        let err = file
+            .write_to(&archive, None, &mut out)
+            .expect_err("a short decode with no digest must not report success");
+        assert!(
+            out.is_empty(),
+            "and nothing is written for it: got {} byte(s)",
+            out.len()
+        );
+        let shown = format!("{err}");
+        assert!(
+            shown.contains("integrity record") || shown.contains("declared unpacked size"),
+            "the refusal must name why: {shown}"
+        );
+
+        // The control: the untouched member still extracts.
+        let mut good = Vec::new();
+        whole.write_to(&archive, None, &mut good).unwrap();
+        assert_eq!(good, data);
     }
 
     #[test]

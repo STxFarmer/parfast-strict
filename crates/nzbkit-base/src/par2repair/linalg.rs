@@ -53,7 +53,7 @@ struct CoeffTable<'a> {
     stride: usize,
 }
 
-#[allow(clippy::too_many_arguments)]
+#[expect(clippy::too_many_arguments)]
 fn fold_chunk_tiled_prepared(
     dsts: &mut [&mut [u16]],
     srcs: &[&[u8]],

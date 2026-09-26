@@ -83,6 +83,14 @@ impl Extractor {
             .as_mut()
             .unwrap()
             .feed(offset, data);
+        // GH #92: before anything keys on the stored name - the group
+        // assignment and the links below - a continuation stored under a
+        // different name takes its predecessor's. See the function.
+        let renamed_next = if progressed {
+            Self::adopt_renamed_continuation(inner, slot)
+        } else {
+            Vec::new()
+        };
         if progressed {
             // Everything the shape badge reports about the archive itself
             // is known here, the instant the headers parse: the version
@@ -266,6 +274,18 @@ impl Extractor {
         if progressed {
             self.link_split_names(inner, slot)?;
             if let Some(key) = inner.slots[slot].group.clone() {
+                self.reresolve(inner, &key)?;
+            }
+        }
+        // Later volumes parsed first and grouped under their own names;
+        // now renamed, they link the same way.
+        for q in renamed_next {
+            if inner.slots[q].group.is_none() {
+                continue;
+            }
+            self.link_split_names(inner, q)?;
+            if let Some(key) = inner.slots[q].group.clone() {
+                let key = Self::canon_key(inner, &key);
                 self.reresolve(inner, &key)?;
             }
         }

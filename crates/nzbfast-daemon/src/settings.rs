@@ -639,6 +639,10 @@ pub(super) const RENAME: &[Setting] = &[
     rw("repair_defer_long", |c| {
         json!(c.d.repair_defer_long.load(Ordering::Relaxed))
     }),
+    // GH #92: delete a job's files once it has failed for good.
+    rw("failed_delete_files", |c| {
+        json!(c.d.failed_delete_files.load(Ordering::Relaxed))
+    }),
     rw("rename_from_nzb", |c| {
         json!(c.d.rename.from_nzb.load(Ordering::Relaxed))
     }),

@@ -3330,3 +3330,6 @@ mod trim_spill_tests;
 
 #[cfg(test)]
 mod polyglot_tests;
+
+#[cfg(test)]
+mod renamed_split_tests;

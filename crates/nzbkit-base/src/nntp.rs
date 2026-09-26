@@ -2407,10 +2407,19 @@ impl Connection {
     /// treating that as a desync would cut every session it ever gave
     /// us. A shifted BODY response cannot hide in that gap, because the
     /// codes a BODY answers with are exactly the ones rejected here.
+    ///
+    /// 223 IS IN THE SET TOO, since read-only sweep finding 12 (21 Sep
+    /// 2026), and the sentence above is why it was not: BODY never
+    /// answers 223, but a BODY is not the only thing this pipeline
+    /// sends. STAT success is 223, and `stat_probe`
+    /// (`NZBFAST_STAT_PROBE`, off by default) puts STATs in the same
+    /// stream - so a DATE dropped upstream between two STATs read the
+    /// second STAT's success as the fence's own answer, alignment held
+    /// through it, and the desync was left for a later status to find.
     pub async fn read_fence(&mut self) -> Result<(), NntpError> {
         let st = self.read_status().await?;
         match st.code {
-            222 | 220 | 423 | 430 | 451 => Err(NntpError::Unexpected {
+            222 | 220 | 223 | 423 | 430 | 451 => Err(NntpError::Unexpected {
                 cmd: "DATE".into(),
                 line: st.into_line(),
             }),

@@ -1265,6 +1265,7 @@ fn build_daemon(
         skip_samples: std::sync::atomic::AtomicBool::new(false),
         // TODO 332: off by default - see the field's own note.
         repair_defer_long: std::sync::atomic::AtomicBool::new(false),
+        failed_delete_files: std::sync::atomic::AtomicBool::new(false),
         #[cfg(feature = "indexer")]
         index_max_age_secs: AtomicU64::new(index_max_age_secs),
         #[cfg(not(feature = "indexer"))]

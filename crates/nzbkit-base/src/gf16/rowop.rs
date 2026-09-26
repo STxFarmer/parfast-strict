@@ -923,7 +923,6 @@ fn scale_dispatch(row: &mut [u16], c: &FoldCoeff) -> usize {
         // so the variants left over on each build are unreachable rather
         // than unhandled - and `scale_scalar` does not exist on aarch64,
         // which is why this cannot simply be the scalar arm.
-        #[allow(unreachable_patterns)]
         k => unreachable!("scale_kernel chose {k:?}, which this build has no kernel for"),
     }
 }

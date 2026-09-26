@@ -38,6 +38,17 @@ if command -v md5sum >/dev/null 2>&1; then
 else
     MD5=$(md5 -q "$SPK")
 fi
+# A hasher on PATH is not a hasher that worked, and `md5sum | awk` cannot fail
+# this script (no pipefail under `sh`): a hasher that printed nothing would
+# write "md5": "" into packages.json, which Package Center refuses. Refuse it
+# here instead, before anything is written. An md5 is 32 lowercase hex.
+case "$MD5" in
+    *[!0-9a-f]*|"") MD5="" ;;
+esac
+if [ "${#MD5}" -ne 32 ]; then
+    echo "✗ hashing $SPK did not produce an md5 (32 hex characters) - not writing the feed" >&2
+    exit 1
+fi
 # stat's flags differ between GNU and BSD; wc -c is the portable answer.
 SIZE=$(wc -c < "$SPK" | tr -d ' ')
 

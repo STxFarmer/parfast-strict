@@ -782,7 +782,9 @@ fn activate_deferred_sets(
 /// gigabytes through this path.
 ///
 /// Returns the per-slot reports, whether a MAPPED slot reported bad blocks,
-/// and the deobfuscated names a CHASED slot could not take while its writer
+/// the names whose lied tail this pass could not cut (read-only sweep
+/// finding 5 - see the truncate block below), and the deobfuscated names
+/// a CHASED slot could not take while its writer
 /// was live - applied after `extractor.finish()`, when nothing holds an fd on
 /// the partial file any more; otherwise the slot keeps the posted name for
 /// good and an obfuscated `hash.bin` is what the user is left looking at.
@@ -797,10 +799,14 @@ fn settle_slots(
 ) -> (
     Vec<(usize, nzbkit::live::SlotReport)>,
     bool,
+    Vec<String>,
     Vec<(usize, String)>,
     crate::unpack::PublishedNames,
 ) {
     let mut damage_in_mapped = false;
+    // The files whose declared-size lie is STILL ON DISK - see the
+    // `set_len` block below.
+    let mut untruncated: Vec<String> = Vec::new();
     let mut deferred_renames: Vec<(usize, String)> = Vec::new();
     let mut published_names = crate::unpack::PublishedNames::for_dir(out_dir);
     let settled: Vec<(usize, Option<nzbkit::live::SlotReport>)> = {
@@ -936,12 +942,27 @@ fn settle_slots(
                         md.len(),
                         r.length
                     ),
-                    Err(e) => warn!(
-                        target: "verify",
-                        "could not truncate {} to its PAR2 length {}: {e}",
-                        path.display(),
-                        r.length
-                    ),
+                    // A FAILED CUT IS A FAILED SETTLE FOR THIS FILE, not
+                    // a warning. Read-only sweep finding 5 (21 Sep
+                    // 2026): this arm only `warn!`d, and nothing
+                    // downstream read the warning - the slot stayed on
+                    // the clean path with `bad_blocks` empty, so the
+                    // job could complete at rc=0 with the poster's zero
+                    // tail still appended. The bytes in [0, length) are
+                    // proved by the block grid; the bytes past it are
+                    // proved by nothing, and the whole reason this
+                    // block exists is that shipping them was wrong.
+                    // An immutable flag, a Windows sharing violation or
+                    // an EACCES on the file all land here.
+                    Err(e) => {
+                        warn!(
+                            target: "verify",
+                            "✘ could not truncate {} to its PAR2 length {}: {e}",
+                            path.display(),
+                            r.length
+                        );
+                        untruncated.push(r.par2_name.clone().unwrap_or_else(|| slot.hint.clone()));
+                    }
                 }
             }
             // Deobfuscation: the PAR2 FileDesc name is the real one -
@@ -1045,7 +1066,13 @@ fn settle_slots(
             reports.push((sidx, r));
         }
     }
-    (reports, damage_in_mapped, deferred_renames, published_names)
+    (
+        reports,
+        damage_in_mapped,
+        untruncated,
+        deferred_renames,
+        published_names,
+    )
 }
 
 // The duplicate-donor pass over every set of the job, and the summary
@@ -1489,7 +1516,7 @@ async fn settle_with_set(
     let mut spent: Vec<PathBuf> = Vec::new();
     let mut rescue_left: Vec<PathBuf> = Vec::new();
     let vt0 = Instant::now();
-    let (mut reports, damage_in_mapped, deferred_renames, mut pubnames) =
+    let (mut reports, damage_in_mapped, untruncated, deferred_renames, mut pubnames) =
         settle_slots(slots, verifier, extractor, out_dir);
     // PLAN M31 stage 1 - borrow what a duplicate posting can serve
     // before repair spends a recovery block. It belongs exactly HERE:
@@ -1728,6 +1755,7 @@ async fn settle_with_set(
             donor_nzbs,
             &mut spent,
             &mut rescue_left,
+            &set_names,
         )
         .await?;
         all_good = o.all_good;
@@ -1880,6 +1908,20 @@ async fn settle_with_set(
     // on its way past counts; `&=` and not `&&` so the report still names
     // it when the verdict is already lost. See [`super::emptydesc`].
     all_good &= !super::emptydesc::report_unsatisfied_zero_length(&unpriced, &sets, out_dir);
+    // Read-only sweep finding 5: a file whose lied tail could not be cut
+    // keeps bytes the set proves nothing about, so the job did not
+    // finish clean whatever every other check says. `&=` and not `&&`
+    // for the reason the line above gives - the report still names them
+    // when the verdict is already lost.
+    if !untruncated.is_empty() {
+        warn!(
+            target: "verify",
+            "✘ {} file(s) still carry the tail their yEnc headers lied about,              because the truncate failed: {}",
+            untruncated.len(),
+            untruncated.join(", ")
+        );
+        all_good = false;
+    }
     // The end-of-job sniffed-leftover sweep (below, after
     // extractor.finish()) needs the set's FileDesc names to spare
     // payload that is ITSELF par2 - `set_names` above is that list.

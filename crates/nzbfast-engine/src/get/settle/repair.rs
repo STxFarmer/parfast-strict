@@ -1397,6 +1397,13 @@ pub(super) async fn run_set_repair(
     // reason the rescue had to be written. See `repair/volpayload.rs`
     // for the stated limits.
     rescue_left: &mut Vec<PathBuf>,
+    // TODO 164: the union of every adopted set's FileDesc names,
+    // sanitized and lowercased - `union_set_names` in the parent, which
+    // computes it before this call. What the re-extract's leftover
+    // judgement below is taken against; a group the ladder leaves
+    // packed is the posted release rather than a decoy exactly when one
+    // of its volumes is named here.
+    set_names: &std::collections::HashSet<String>,
 ) -> Result<RepairOutcome> {
     let mut all_good;
     let mut reextract_failed: Option<String> = None;
@@ -1656,8 +1663,47 @@ pub(super) async fn run_set_repair(
             // The ladder's own reason where it has one - a bomb
             // verdict names the DISK, and this sentence names the
             // repair. See [`reextract_dir_why`].
-            all_good = match reextract_dir_why(out_dir, password)? {
-                Ok(()) => true,
+            //
+            // `reextract_dir_outcome` and NOT the `_why` wrapper, since
+            // read-only sweep finding 5/6 (21 Sep 2026): the wrapper is
+            // `outcome.map(|_| ())`, so it THROWS AWAY the leftover list
+            // - and the directory-level answer underneath it is
+            // EXISTENTIAL. One group unpacking (a sample, a decoy) makes
+            // it `Ok`, and that arm has already deleted the extracted
+            // groups' volumes, so a job whose vouched release was still
+            // packed set `all_good` and could complete with the decoy on
+            // disk and the release untouched. The resume arm in
+            // `tail.rs` has taken the outcome and vouched it against the
+            // set since TODO 164; this arm never did, and nothing
+            // downstream covered it - `demoted_volume_ladder` runs its
+            // own `settle_leftovers` only when the DOWNLOAD extractor's
+            // report carried a fallback, and it is never handed the
+            // list this call produces.
+            //
+            // `Locked` is not separated out here, unlike the resume
+            // arm, and it does not need to be: a header-encrypted set
+            // with no password supplied returns from
+            // `reextract_dir_outcome`'s own password arm with an EMPTY
+            // leftover list, so `judge` cannot see it from this side.
+            // Only the vouched-and-still-packed case reaches the arm
+            // below.
+            all_good = match reextract_dir_outcome(out_dir, password)? {
+                Ok(packed) => {
+                    use crate::rarfix::vouch::{VouchVerdict, failure_sentence, judge};
+                    match judge(&packed, Some(set_names)) {
+                        VouchVerdict::Failed { names, reason } => {
+                            // A group's own refusal outranks the
+                            // sentence, exactly as it does in
+                            // `settle_leftovers`: a bomb verdict is
+                            // about the DISK, and the sentence blames
+                            // the archive.
+                            reextract_failed =
+                                Some(unpack_failure(reason, &failure_sentence(&names)));
+                            false
+                        }
+                        VouchVerdict::Tolerated | VouchVerdict::Locked(_) => true,
+                    }
+                }
                 Err(why) => {
                     reextract_failed = Some(unpack_failure(
                         why,

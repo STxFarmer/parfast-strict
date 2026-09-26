@@ -195,7 +195,7 @@ impl Drop for MoveClaim {
 /// function is handed one directory at a time. A batch caller taking it
 /// per record would see its own siblings as claimants and refuse
 /// everything.
-fn settle_may_remove_files(d: &Arc<Daemon>, nzo_id: &str) -> bool {
+pub(crate) fn settle_may_remove_files(d: &Arc<Daemon>, nzo_id: &str) -> bool {
     // Queue before history, the order the REST delete arm takes them in
     // and the reason it says so: taking the two in one order everywhere
     // is what keeps them from deadlocking.

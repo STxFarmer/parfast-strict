@@ -890,7 +890,24 @@ fn repair_mapped_inner(
     let mut missing: Vec<usize> = Vec::new();
     let mut next = 0usize;
     for (fi, (f, present)) in files.iter().enumerate() {
-        let n = f.length.div_ceil(bs) as usize;
+        // In u64 and REFUSED BEFORE THE CAST, exactly as the disk
+        // driver's `n_slices_u64` is and for the same reason it says:
+        // `f.length` is attacker-controlled, so `as usize` truncates on
+        // the shipped 32-bit armv7 target and lands a SHORT slice map
+        // that both sides then agree on. Read-only sweep finding 7
+        // (21 Sep 2026): the aggregate `n_inputs > MAX_INPUT_SLICES`
+        // check below is too late twice over - it runs past the cast,
+        // and past `owner.extend(repeat_n(fi, n))`, which is where a
+        // 64-bit caller that reached here with a matching `present`
+        // vector already built would allocate.
+        let n_u64 = f.length.div_ceil(bs);
+        if n_u64 > MAX_INPUT_SLICES as u64 {
+            return Err(RepairError::Malformed(format!(
+                "{}: {n_u64} slices exceeds the PAR2 limit of {MAX_INPUT_SLICES}",
+                f.name
+            )));
+        }
+        let n = n_u64 as usize;
         if present.len() != n {
             return Err(RepairError::Malformed(format!(
                 "{}: present vector has {} entries, length implies {n}",
@@ -3715,10 +3732,39 @@ fn repair_dir_set_inner(
     // dependency on. Every adopted read and every verify is done by
     // here, so the cache has no readers left.
     cand_reader.lock_ok().close_all();
+    land_rebuilds(
+        renames,
+        whole,
+        &unpublished,
+        &mut damaged,
+        &targets,
+        shortfall,
+        &mut report,
+    )?;
+    Ok(status::finish(shortfall, needed, adopted.len(), report))
+}
+
+/// The last stage of [`repair_dir_set_inner`]: rename every rebuild temp
+/// and every adopted whole-file donor onto its target, and record what
+/// landed.
+///
+/// A free function rather than the tail of that one since 21 Sep 2026,
+/// under the size gate - the caller sits on a baseline and this block is
+/// the one self-contained stage of it that needed no state to move with
+/// it. The body is verbatim except for the donor guard named below.
+fn land_rebuilds(
+    mut renames: Vec<(PathBuf, usize)>,
+    whole: adopt::WholeMatches,
+    unpublished: &[usize],
+    damaged: &mut Vec<usize>,
+    targets: &[Target],
+    shortfall: Option<usize>,
+    report: &mut RepairReport,
+) -> Result<(), RepairError> {
     renames.extend(whole.renames);
-    status::drop_unpublished(&unpublished, &mut damaged, &mut renames);
+    status::drop_unpublished(unpublished, damaged, &mut renames);
     let temp_set: HashSet<usize> = renames.iter().map(|&(_, ti)| ti).collect();
-    for &ti in &damaged {
+    for &ti in damaged.iter() {
         if !temp_set.contains(&ti) {
             report.files_patched.push(targets[ti].file.name.clone());
         }
@@ -3733,7 +3779,13 @@ fn repair_dir_set_inner(
         // NO canonical file at all: the original had been deleted and the
         // rebuilt copy was still sitting under its temp name.
         if let Err(e) = std::fs::rename(&tmp, &t.path) {
-            let _ = std::fs::remove_file(&tmp);
+            // ...AND `tmp` IS THE DONOR ITSELF on a whole-file match, so
+            // the unlink below is a rebuild temp's only. See
+            // `adopt::WholeMatches` for what a donor costs when this arm
+            // deletes one: read-only sweep finding 1, 21 Sep 2026.
+            if !whole.targets.contains(&ti) {
+                let _ = std::fs::remove_file(&tmp);
+            }
             status::publish_failed(shortfall, &t.file.name, e.into())?;
             continue;
         }
@@ -3745,7 +3797,7 @@ fn repair_dir_set_inner(
             report.files_renamed.push(t.file.name.clone());
         }
     }
-    Ok(status::finish(shortfall, needed, adopted.len(), report))
+    Ok(())
 }
 
 // The verify half of the repair - the block-hash pass, the pass-1

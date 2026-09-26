@@ -1217,7 +1217,7 @@ mod tests {
         // reds aarch64 instead, where the extend needs it. Every dev box
         // on this fleet is aarch64, which is why this shipped green
         // locally and red on main (run 35078365972, 16 Sep 2026).
-        #[cfg_attr(not(target_arch = "aarch64"), allow(unused_mut))]
+        #[cfg_attr(not(target_arch = "aarch64"), expect(unused_mut))]
         let mut big: Vec<usize> = vec![1023, 1024, 1025, 4096, 65537];
         // The ladder's own bound, by NAME. It was the same constant as
         // `BULK_MIN` until raising that for `copy_disjoint` silently handed

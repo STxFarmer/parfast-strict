@@ -816,22 +816,37 @@ fn decode_and_decrypt(
 /// (`end <= size`) is never truncated by either rule - `room` is at
 /// least `len` by construction - so the only behaviour that moved is
 /// the self-inconsistent one, from "trust the lie" to "trust the NZB".
+///
+/// 21 Sep 2026: and `size=0` is a self-inconsistent shape too, which it
+/// was not read as. It used to return before any of the above - see the
+/// `bound` arms.
 fn clamp_to_declared_size(
     out: &mut Vec<u8>,
     dec: &nzbkit::yenc::Meta,
     article_crc: &mut Option<u32>,
     posted_bytes: u64,
 ) {
-    if dec.file_size == 0 {
-        return;
-    }
     // `end` is the article's own `=ypart end=` (1-based, inclusive), or
     // `size=` itself when the article carried no `=ypart` - which is why
     // a single-part article always takes the first arm.
-    let bound = if dec.end <= dec.file_size || posted_bytes == 0 {
+    //
+    // A `size=` of ZERO IS NOT A BOUND, and until 21 Sep 2026 it was not
+    // a fall-through either: this function returned right here, so the
+    // NZB's posted extent never got its turn. `yenc.rs` parses `size=`
+    // with `unwrap_or(0)`, so a MISSING `size=` reads the same, and an
+    // article carrying a huge `=ypart begin=` with a CRC-valid body was
+    // positioned wherever it asked - which is exactly the balloon the
+    // 20 Sep change closed for a nonzero lying `size=` (read-only sweep
+    // finding 4). The posted sum takes over for both self-inconsistent
+    // shapes now. Only a post that declares no bytes at all on EITHER
+    // side has nothing to bound against, and that is the one case left
+    // unclamped.
+    let bound = if dec.file_size > 0 && (dec.end <= dec.file_size || posted_bytes == 0) {
         dec.file_size
-    } else {
+    } else if posted_bytes > 0 {
         posted_bytes
+    } else {
+        return;
     };
     // Clamp in u64 BEFORE narrowing, the house rule at
     // `nzbkit::live::slotstate::head_want`: `(file_size - offset) as
@@ -2310,6 +2325,23 @@ pub(super) async fn drain_network(
     // own flush pass settle now; anything still RAM-held refetches on
     // resume, which is exactly the truthful record.
     flush_pending_d(pending_d, extractor, journal);
+    // AND FLUSH AGAIN, because the pass above QUEUES. Read-only sweep
+    // finding 3 (21 Sep 2026): `record_placed_crypto` goes through
+    // `record_letter` -> `Journal::queue`, which lands only when the
+    // pending buffer reaches `BATCH_BYTES` or when the NEXT `queue`
+    // call finds the batch `BATCH_AGE` old. There is no timer, and the
+    // `journal.flush()` directly above has just reset that clock - so a
+    // small final `D` batch sits in RAM. The next flush is tail.rs's,
+    // PAST `settle_verify_repair`, which is the multi-minute repair
+    // window; and a SIGTERM inside it does not reach `Journal`'s `Drop`
+    // (a job with `tail_phase` set is exempt from `suspend_matching`,
+    // and `wind_down_and_exit` calls `process::exit`). The journal's
+    // own "a kill loses at most BATCH_AGE of placements" bound is only
+    // true while something keeps calling `queue`; across this window
+    // nothing does. Without this line a resume refetched articles whose
+    // bytes were already placed, and refetched them against a server
+    // that may no longer hold them.
+    journal.flush();
     let elapsed = t0.elapsed();
     ticker.abort();
     watchdog.abort();
@@ -3150,6 +3182,58 @@ mod commitment_tests {
         clamp_to_declared_size(&mut out, &dec, &mut article_crc, 10_000_000);
         assert!(out.is_empty());
         assert_eq!(article_crc, None);
+    }
+
+    /// Read-only sweep finding 5/4 (21 Sep 2026): a `size=` of ZERO -
+    /// which is also what a MISSING `size=` parses to, `yenc.rs` reading
+    /// it with `unwrap_or(0)` - used to return before the posted-bytes
+    /// bound had its turn, so a part positioned a long way past the
+    /// file's posted extent wrote its whole payload there. That is the
+    /// sparse balloon the nonzero-lie arm above closes, reached through
+    /// the one shape the guard let past.
+    #[test]
+    fn a_zero_declared_size_still_takes_the_posted_bytes_bound() {
+        const OFFSET: u64 = 14_592_000;
+        const LEN: usize = 768_000;
+        let payload: Vec<u8> = (0..LEN).map(|i| (i % 251) as u8).collect();
+        // `size=0` with a `=ypart` a long way past it: self-contradictory
+        // on its face, and the only bound left is the NZB's.
+        let art = nzbkit::yenc::encode("x.bin", 0, Some((20, 451)), OFFSET + 1, &payload);
+
+        let mut out = Vec::new();
+        let (dec, integrity) =
+            nzbkit::yenc_simd::decode_into_integrity(&art, &mut out, true).unwrap();
+        assert_eq!(dec.file_size, 0, "the fixture must exercise the zero arm");
+        let mut article_crc = integrity.verified_article_crc;
+        assert!(article_crc.is_some());
+        clamp_to_declared_size(&mut out, &dec, &mut article_crc, 10_000_000);
+        assert!(
+            out.is_empty(),
+            "a part wholly past the posted extent writes nothing"
+        );
+        assert_eq!(article_crc, None);
+
+        // Straddling, same as the nonzero-lie twin above.
+        let mut out = Vec::new();
+        let (dec, integrity) =
+            nzbkit::yenc_simd::decode_into_integrity(&art, &mut out, true).unwrap();
+        let mut article_crc = integrity.verified_article_crc;
+        clamp_to_declared_size(&mut out, &dec, &mut article_crc, OFFSET + 408_000);
+        assert_eq!(out.len(), 408_000);
+        assert_eq!(out[..], payload[..408_000]);
+        assert_eq!(article_crc, None);
+
+        // And with NOTHING to bound against on either side, the old
+        // behaviour stands: nothing is cut, because nothing here is
+        // entitled to cut it.
+        let mut out = Vec::new();
+        let (dec, integrity) =
+            nzbkit::yenc_simd::decode_into_integrity(&art, &mut out, true).unwrap();
+        let wire = integrity.verified_article_crc;
+        let mut article_crc = wire;
+        clamp_to_declared_size(&mut out, &dec, &mut article_crc, 0);
+        assert_eq!(out.len(), LEN);
+        assert_eq!(article_crc, wire);
     }
 
     /// The same order rule at the PAR2 capture mirror: the cap is tested

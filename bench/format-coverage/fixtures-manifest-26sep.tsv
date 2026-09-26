@@ -1,0 +1,16 @@
+text-zip-deflate	archives/text/text.zip	19416357
+text-zip-store	archives/text/text-store.zip	67109030
+text-7z-lzma2	archives/text/text.7z	13140940
+text-tar	archives/text/text.tar	67110400
+text-tar-gz	archives/text/text.tar.gz	19431520
+binary-zip-deflate	archives/binary/binary.zip	67119274
+binary-zip-store	archives/binary/binary-store.zip	67109034
+binary-7z-lzma2	archives/binary/binary.7z	67113150
+binary-tar	archives/binary/binary.tar	67110400
+binary-tar-gz	archives/binary/binary.tar.gz	67129542
+many-small-zip-deflate	archives/many-small/many-small.zip	29545288
+many-small-zip-store	archives/many-small/many-small-store.zip	51082138
+many-small-tar	archives/many-small/many-small.tar	107224064
+many-small-tar-gz	archives/many-small/many-small.tar.gz	55496758
+many-small-7z-solid	archives/many-small/many-small-solid.7z	17035723
+many-small-7z-nonsolid	archives/many-small/many-small-nonsolid.7z	28620151

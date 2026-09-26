@@ -941,9 +941,13 @@ where
                 ));
             }
             validate_split_fragment(file, self.password)?;
-            if file.name != self.pending.name {
-                return Err(Error::InvalidHeader("RAR 1.5 split entry name changed"));
-            }
+            // A continuation's stored NAME is not compared. unrar does not
+            // compare it either: a set whose later volumes carry a different
+            // name tests clean under unrar 7.23 and extracts under the FIRST
+            // fragment's name, and nzbfast GH #92 reports posted sets refused
+            // with this error. A wrong chain is still refused by the header
+            // checks that follow and by the member's CRC.
+            // (nzbfast-local change, 24 Sep 2026; see VENDORING.md.)
             if file.method != self.method {
                 return Err(Error::InvalidHeader(
                     "RAR 1.5 split entry compression method changed",
@@ -1113,9 +1117,13 @@ fn validate_split_continuation_refs(
     password: Option<&[u8]>,
 ) -> Result<()> {
     validate_split_fragment(file, password)?;
-    if file.name != pending.name {
-        return Err(Error::InvalidHeader("RAR 1.5 split entry name changed"));
-    }
+    // A continuation's stored NAME is not compared. unrar does not
+    // compare it either: a set whose later volumes carry a different
+    // name tests clean under unrar 7.23 and extracts under the FIRST
+    // fragment's name, and nzbfast GH #92 reports posted sets refused
+    // with this error. A wrong chain is still refused by the header
+    // checks that follow and by the member's CRC.
+    // (nzbfast-local change, 24 Sep 2026; see VENDORING.md.)
     if file.method != pending.method {
         return Err(Error::InvalidHeader(
             "RAR 1.5 split entry compression method changed",
@@ -1714,11 +1722,11 @@ mod tests {
         let first = file(b"a.txt", FHD_SPLIT_AFTER);
         let pending = PendingSplitRefs::new(&first, 0, 0);
 
+        // A renamed continuation is ACCEPTED: unrar does not compare the
+        // name either, and refusing it was nzbfast GH #92. Every other
+        // property below still has to agree.
         let renamed = file(b"b.txt", FHD_SPLIT_BEFORE);
-        assert!(matches!(
-            validate_split_continuation_refs(&pending, &renamed, None),
-            Err(Error::InvalidHeader(_))
-        ));
+        validate_split_continuation_refs(&pending, &renamed, None).unwrap();
 
         let mut new_method = file(b"a.txt", FHD_SPLIT_BEFORE);
         new_method.method = 0x35;

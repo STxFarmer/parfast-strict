@@ -1673,6 +1673,27 @@ pub(super) fn spawn_http_workers(server: tiny_http::Server, daemon: Arc<Daemon>,
                 }
                 #[cfg(feature = "indexer")]
                 if let Some(f) = path.strip_prefix("/art/") {
+                    // THE SAME LOGIN GATE /wall IS BEHIND, since
+                    // read-only sweep finding 11 (21 Sep 2026). This
+                    // route matches ABOVE the API-key parse and checked
+                    // nothing, so with a key configured and login on,
+                    // `GET /art/m_the_matrix_1999.jpg` still answered
+                    // the JPEG or a 404 - a title oracle over a private
+                    // wall, from an unauthenticated client. The session
+                    // cookie is the right door rather than the key: an
+                    // `<img>` cannot send `X-Api-Key`, and the wall's
+                    // own grid is same-origin so it sends the cookie
+                    // already. 404 and not a redirect - an image request
+                    // has nowhere to follow one to, and a 404 leaks
+                    // less than a 403.
+                    if nzbfast_daemon::websession::login_on(&d)
+                        && !d.sessions.is_live(session_id(&req, &d).as_deref())
+                    {
+                        let _ = req.respond(
+                            tiny_http::Response::from_string("not found").with_status_code(404),
+                        );
+                        continue;
+                    }
                     route_art(req, &d, f);
                     continue;
                 }

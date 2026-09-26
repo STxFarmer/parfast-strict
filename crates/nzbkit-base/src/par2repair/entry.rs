@@ -233,7 +233,7 @@ pub fn repair_dir_set_with_donors_scoped_as(
 /// than avoided; a caller that wanted to avoid it would need the
 /// trait to say it does not want the report, which is surface for one
 /// call site.
-#[allow(clippy::too_many_arguments)]
+#[expect(clippy::too_many_arguments)]
 fn scoped_with_observer(
     dir: &Path,
     set_id: &[u8; 16],

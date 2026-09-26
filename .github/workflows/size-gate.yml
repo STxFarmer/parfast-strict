@@ -3779,6 +3779,14 @@ jobs:
       # for this arm rather than nearly true.
       - name: claims ledger
         run: tools/claims.py --selftest
+      # The bare-metal rental CLI (Hetzner, AWS, Vultr). Its selftest is
+      # OFFLINE - no account, no network - and pins the auction-feed
+      # parse, the approval token an order is refused without, and that
+      # tools/rentals-aws-policy.json still names exactly the instance
+      # types and regions the tool's catalogue does, so the IAM policy
+      # and the code cannot drift apart silently.
+      - name: rentals CLI
+        run: tools/rentals.py --selftest
       # The local pre-push orchestrator: derives its gate roster from THIS
       # workflow (tools/workflow_scan.py), scopes gates to the changed set,
       # parallelises them, and caches green selftests by script hash. Its

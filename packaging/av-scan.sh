@@ -50,10 +50,29 @@ mkdir -p inner && unzip -o -q "nzbfast-$VER-windows-x64.zip" -d inner
 # nzbfast-X-windows-x64-setup.exe) so it sorts beside the portable zip and
 # actually says "windows". Accept either, so this still scans old releases.
 TARGETS="nzbfast-$VER-windows-x64.zip"
+n_setup=0
 for c in "nzbfast-setup-$VER.exe" "nzbfast-$VER-windows-x64-setup.exe"; do
-  [ -f "$c" ] && TARGETS="$TARGETS $c"
+  [ -f "$c" ] && { TARGETS="$TARGETS $c"; n_setup=$((n_setup + 1)); }
 done
-for f in inner/*/*; do TARGETS="$TARGETS $f"; done
+# The soft guard above is for OLD releases that carry the other name, not
+# for a release whose installer leg failed: with neither file present the
+# run used to scan "zip only" and read green (empty-set census 21 Sep 2026,
+# 2.7). A release with genuinely no installer can say so with
+# AV_ALLOW_NO_INSTALLER=1; the default is to refuse.
+if [ "$n_setup" -eq 0 ] && [ "${AV_ALLOW_NO_INSTALLER:-}" != 1 ]; then
+  echo "av-scan: REFUSING - v$VER has NO installer asset (looked for nzbfast-setup-$VER.exe and nzbfast-$VER-windows-x64-setup.exe), so only the zip would be scanned. A failed installer leg reads exactly like this. Set AV_ALLOW_NO_INSTALLER=1 if this release genuinely shipped without one." >&2
+  exit 1
+fi
+n_inner=0
+for f in inner/*/*; do
+  [ -f "$f" ] || continue
+  TARGETS="$TARGETS $f"; n_inner=$((n_inner + 1))
+done
+if [ "$n_inner" -eq 0 ]; then
+  echo "av-scan: REFUSING - nzbfast-$VER-windows-x64.zip extracted no member at inner/*/*, and the engines flag the members, not the zip. The layout moved or the zip is empty." >&2
+  exit 1
+fi
+echo "av-scan: will scan the zip, $n_setup installer(s) and $n_inner zip member(s)"
 
 vt_report() {   # $1 = sha256
   curl -s --request GET \

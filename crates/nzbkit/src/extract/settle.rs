@@ -254,6 +254,156 @@ impl Extractor {
         Ok(())
     }
 
+    /// GH #92: a split member whose CONTINUATION carries a different
+    /// stored name. unrar never compares the name - it extracts the
+    /// member under the first fragment's - and posted RAR4 sets that do
+    /// this failed native unpack until a939dae3a taught `rars` the same.
+    /// This side keys everything on the stored name (groups, aliases,
+    /// output names, `resolve_indexed`'s links), so such a set could
+    /// never link and every volume after the rename fell back: correct
+    /// output from the post-pass, but none of it one-pass.
+    ///
+    /// The fix is the unpacker's rule, applied where the headers parse:
+    /// the continuation takes its predecessor's name, and from then on
+    /// the ordinary name machinery links it - `link_split_names` merges
+    /// the groups and the resolve finds the base. Only a pair that is
+    /// structurally one member is renamed:
+    ///
+    /// * the two volumes are ADJACENT in one set - same release stem,
+    ///   volume keys one apart, each key held by exactly one slot;
+    /// * the predecessor's LAST entry continues (`split_after`) and the
+    ///   successor's FIRST entry is continued (`split_before`), which
+    ///   is the only place a split piece can sit in a volume;
+    /// * both are files of the same RAR family and declare the same
+    ///   whole-member size, and neither name appears twice in its
+    ///   volume.
+    ///
+    /// * the continuation has not been PLACED yet - no output file or
+    ///   child route exists under its name. A tail piece anchors itself
+    ///   (`unpacked_size - data_len`) and writes the moment it parses,
+    ///   so when the tail volume lands before its predecessors, its
+    ///   bytes are already in a file of its own name; renaming it then
+    ///   stranded them there and reported the member complete with a
+    ///   hole where the tail should be (measured, `[2, 1, 0]` arrival,
+    ///   before this clause). Unplaced continuations are only ever HELD,
+    ///   and held bytes resolve against whatever name the entry carries
+    ///   when their base arrives.
+    ///
+    /// Anything else keeps its name and falls back exactly as before.
+    /// Called on every parse progression, from whichever side arrives
+    /// second.
+    ///
+    /// A rename CARRIES FORWARD. Volumes arrive in any order, so the
+    /// tail of a member can adopt the middle's name before the head has
+    /// parsed, and when the head then renames the middle, the tail is
+    /// left holding a name nothing links to any more (measured: the
+    /// `[2, 1, 0]` arrival fell back until this walked the chain). So
+    /// every rename re-offers the renamed slot's name to ITS successor,
+    /// until a pair declines.
+    ///
+    /// Returns the OTHER slots renamed, so the caller can re-link their
+    /// groups as well as its own.
+    pub(super) fn adopt_renamed_continuation(inner: &mut Inner, slot: usize) -> Vec<usize> {
+        let mut renamed = Vec::new();
+        let Some((num, stem)) = Self::set_position(inner, slot) else {
+            return renamed;
+        };
+        if num > 0
+            && let Some(p) = Self::set_neighbour(inner, slot, num - 1, &stem)
+        {
+            Self::adopt_name(inner, p, slot);
+        }
+        // Bounded by the slot count: each step moves one volume on, and
+        // a slot is never its own neighbour.
+        let (mut at, mut n) = (slot, num);
+        for _ in 0..inner.slots.len() {
+            let Some(q) = Self::set_neighbour(inner, at, n + 1, &stem) else {
+                break;
+            };
+            if !Self::adopt_name(inner, at, q) {
+                break;
+            }
+            renamed.push(q);
+            (at, n) = (q, n + 1);
+        }
+        renamed
+    }
+
+    /// A slot's place in its set: its volume key and release stem, or
+    /// None for a name that does not number a volume.
+    fn set_position(inner: &Inner, slot: usize) -> Option<(u64, String)> {
+        let name = &inner.slots[slot].name;
+        let (num, _) = vol_sort_key(name);
+        (num != u64::MAX).then(|| (num, release_stem(name)))
+    }
+
+    /// The one other parsed slot at volume key `num` of set `stem`;
+    /// None when there is none or more than one.
+    fn set_neighbour(inner: &Inner, slot: usize, num: u64, stem: &str) -> Option<usize> {
+        let mut found = None;
+        for si in 0..inner.slots.len() {
+            if si == slot || inner.slots[si].mapper.is_none() {
+                continue;
+            }
+            if Self::set_position(inner, si).is_some_and(|(n, s)| n == num && s == stem) {
+                if found.is_some() {
+                    return None;
+                }
+                found = Some(si);
+            }
+        }
+        found
+    }
+
+    /// Rename `b`'s first entry to `a`'s last when the pair is one split
+    /// member under two names. See [`Self::adopt_renamed_continuation`].
+    fn adopt_name(inner: &mut Inner, a: usize, b: usize) -> bool {
+        let (Some(ma), Some(mb)) = (
+            inner.slots[a].mapper.as_ref(),
+            inner.slots[b].mapper.as_ref(),
+        ) else {
+            return false;
+        };
+        let (Some(la), Some(fb)) = (ma.entries.last(), mb.entries.first()) else {
+            return false;
+        };
+        let once =
+            |m: &VolumeMapper, n: &str| m.entries.iter().filter(|e| e.name == n).count() == 1;
+        let one_member = ma.version.is_some()
+            && ma.version == mb.version
+            && !la.is_dir
+            && !fb.is_dir
+            && la.split_after
+            && fb.split_before
+            && la.name != fb.name
+            && la.unpacked_size == fb.unpacked_size
+            && once(ma, &la.name)
+            && once(mb, &fb.name)
+            && !mb.entries.iter().any(|e| e.name == la.name);
+        if !one_member || Self::entry_placed(inner, b, &fb.name) {
+            return false;
+        }
+        let name = la.name.clone();
+        inner.slots[b].mapper.as_mut().unwrap().entries[0].name = name;
+        true
+    }
+
+    /// Has `slot`'s group already opened a destination for `name` - an
+    /// output file, or a route to the nested child?
+    fn entry_placed(inner: &Inner, slot: usize, name: &str) -> bool {
+        let Some(gk) = inner.slots[slot].group.as_ref() else {
+            return inner
+                .inner_writers
+                .contains_key(sanitize_out_name(name).as_str());
+        };
+        let gk = Self::canon_key(inner, gk);
+        inner.groups.get(&gk).is_some_and(|g| {
+            g.out_names.contains_key(name)
+                || g.routed.contains_key(name)
+                || g.routed_plain.contains_key(name)
+        })
+    }
+
     /// Merge group `from` into group `into` (one archive, one group, one
     /// fate). Aliases are flattened so future lookups land on `into`.
     pub(super) fn merge_groups(&self, inner: &mut Inner, into: &str, from: &str) -> io::Result<()> {

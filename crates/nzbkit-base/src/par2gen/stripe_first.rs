@@ -102,7 +102,7 @@ fn overlap_enabled() -> bool {
 /// One chunk's flush: every row's span to its packet's payload at
 /// column offset `at`, and into that packet's running seal, across
 /// `lanes` writer threads.
-#[allow(clippy::too_many_arguments)]
+#[expect(clippy::too_many_arguments)]
 fn flush_chunk(
     dir: &Path,
     staging: &[u16],
@@ -410,7 +410,7 @@ pub(super) struct Args<'a> {
 }
 
 /// The batch loop's one call: admission, then [`run`].
-#[allow(clippy::too_many_arguments)]
+#[expect(clippy::too_many_arguments)]
 pub(super) fn try_run(
     control: &CreateControl,
     trail: &CreateTrail,
@@ -461,7 +461,7 @@ pub(super) fn try_run(
 /// contiguous runs of the plan, sharing one handle per member:
 /// `disk::read_exact_at` takes its offset per call on every platform (see
 /// `scan::scan_parallel_positional`).
-#[allow(clippy::too_many_arguments)]
+#[expect(clippy::too_many_arguments)]
 fn read_band(
     control: &CreateControl,
     files: &[std::fs::File],
@@ -537,7 +537,7 @@ fn probe_row(srcs: &[&[u8]], logs: &[u32], first: usize, words: usize) -> Vec<u1
 ///
 /// Split out of [`run`]'s chunk loop for the size gate's 500-line function
 /// ceiling, which that loop's band arm left three lines clear of.
-#[allow(clippy::too_many_arguments)]
+#[expect(clippy::too_many_arguments)]
 fn band_chunk(
     a: &Args,
     mapped: bool,

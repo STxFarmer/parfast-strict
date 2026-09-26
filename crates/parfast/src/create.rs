@@ -53,6 +53,13 @@ pub trait CreateWatch {
     fn control(&self) -> par2gen::control::CreateControl {
         par2gen::control::CreateControl::default()
     }
+
+    /// The engine has returned, and nothing it drives will draw again.
+    /// Called ONCE, before the first line the create prints after it,
+    /// so a caller whose meter leaves a `\r` fragment on the terminal
+    /// can end it there - GH #88's `Doneress: 100.0%` was `Done`
+    /// written over the `--progress` bar's `Progress:`.
+    fn settled(&self) {}
 }
 
 /// The watch that watches nothing and refuses nothing.
@@ -165,7 +172,7 @@ pub fn run_watched(opts: &Options, sink: &mut Sink, watch: &dyn CreateWatch) -> 
     // The COUNT, never a percentage: par2cmdline's switches select an
     // exact number of recovery blocks and the volume split follows it,
     // so a round trip through a percentage moves every file name.
-    match par2gen::create_into_exact_controlled(
+    let created = par2gen::create_into_exact_controlled(
         &dir,
         &members,
         &base,
@@ -186,7 +193,9 @@ pub fn run_watched(opts: &Options, sink: &mut Sink, watch: &dyn CreateWatch) -> 
         // workers, and a watch that answered differently on a second
         // call would be two controls for one create.
         &watch.control(),
-    ) {
+    );
+    watch.settled();
+    match created {
         Ok(written) => {
             sink.line(
                 Level::Normal,

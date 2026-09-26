@@ -311,7 +311,7 @@ fn part_numbers(len: usize, art: usize, reorder: bool, rng: &mut Rng) -> Vec<u32
 /// not match its bytes (E3 `wrong`), or `None`. Chunk index rather than
 /// part number, because under N6 the part numbers are shuffled and the
 /// fault has to land on a definite article either way.
-#[allow(clippy::too_many_arguments)]
+#[expect(clippy::too_many_arguments)]
 fn encode_file(
     src: &SourceFile,
     nm: &FileNaming,

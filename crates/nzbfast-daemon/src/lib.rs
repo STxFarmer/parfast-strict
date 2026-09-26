@@ -359,7 +359,7 @@ pub mod watchlist;
 // slim TEST build reaches it through `testutil`, which builds a
 // Daemon out of the seeders. A `use` can be unused where a `mod`
 // never could (step 2's finding 3).
-#[cfg(any(feature = "indexer", test, feature = "test-support"))]
+#[cfg(any(test, feature = "test-support"))]
 use watchlist::*;
 
 // TODO 151 (issue #36): external list sources feeding the watchlist.
@@ -379,7 +379,7 @@ pub mod settings_restore;
 // slim TEST build reaches it through `testutil`, which builds a
 // Daemon out of the seeders. A `use` can be unused where a `mod`
 // never could (step 2's finding 3).
-#[cfg(any(feature = "indexer", test, feature = "test-support"))]
+#[cfg(any(test, feature = "test-support"))]
 use settings_restore::*;
 
 // §125: the throughput graph's learned 100% anchor.

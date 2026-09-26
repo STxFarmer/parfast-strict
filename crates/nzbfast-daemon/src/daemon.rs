@@ -1397,6 +1397,12 @@ pub struct Daemon {
     /// the engine as `JobSpec::defer_long_repair` already ANDed with
     /// that mark, so the engine holds no policy at all.
     pub repair_defer_long: std::sync::atomic::AtomicBool,
+    /// GH #92: remove a job's files from disk once it has FAILED for
+    /// good, so a stream of failures does not fill the download disk.
+    /// Off by default - a failed job's volumes are what a retry, a hand
+    /// extraction or a password unlock work from. The record stays in
+    /// history either way. See `Daemon::park_drop_failed_payload`.
+    pub failed_delete_files: std::sync::atomic::AtomicBool,
     /// M12 volume control, live: only index posts newer than this
     /// (seconds; 0 = off). Read by the scan loop each pass.
     pub index_max_age_secs: AtomicU64,

@@ -605,7 +605,7 @@ fn joint_default_on() -> bool {
             crate::par2seams::KernelClass::Gfni256 | crate::par2seams::KernelClass::Nibble
         );
     }
-    #[allow(unreachable_code)]
+    #[cfg_attr(target_arch = "x86_64", expect(unreachable_code))]
     false
 }
 
@@ -1264,7 +1264,7 @@ impl ForneyPlan {
         // because the byte-identity proofs have to run the kernel on a
         // gated class at depths a unit test can afford; production
         // reads the constant.
-        #[allow(unused_mut)]
+        #[cfg_attr(not(test), expect(unused_mut))]
         let mut stage1_gate = decline.is_some() || kernel_gate(self.m);
         #[cfg(test)]
         if joint.force_kernel && decline.is_none() {

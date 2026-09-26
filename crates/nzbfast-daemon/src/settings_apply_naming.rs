@@ -114,6 +114,13 @@ pub(super) fn apply_setting_naming(
             d.repair_defer_long.store(on, Ordering::Relaxed);
             (true, json!(on))
         }
+        // GH #92. Read when a job is filed as failed, so it applies from
+        // the next failure; nothing already in history is touched.
+        "failed_delete_files" => {
+            let on = flag();
+            d.failed_delete_files.store(on, Ordering::Relaxed);
+            (true, json!(on))
+        }
         "rename_from_nzb" => {
             let on = flag();
             d.rename.from_nzb.store(on, Ordering::Relaxed);

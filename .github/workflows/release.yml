@@ -612,6 +612,28 @@ jobs:
     steps:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with: { path: dist, merge-multiple: true }
+      # A FLOOR, not a tolerance. The globs below are deliberately allowed
+      # to match nothing one by one (the ARM64 leg may be absent), but
+      # nothing distinguished "some globs matched nothing" from "EVERY glob
+      # matched nothing", and the second publishes a release page with no
+      # binaries on it and a green run (21 Sep 2026 empty-set census, 2.6).
+      # The `binaries` job is required green by this job's `if`, and it
+      # uploads one nzbfast-<triple>.tar.gz per matrix target, so at least
+      # one tar.gz in dist/ is the one thing that must be true here - a
+      # missing one is an artifact-transfer failure, never a partial-beta
+      # decision. This asserts nothing about the beta legs.
+      - name: Refuse to publish a release with no binaries
+        shell: bash
+        run: |
+          shopt -s nullglob
+          tarballs=(dist/*.tar.gz)
+          if [ "${#tarballs[@]}" -eq 0 ]; then
+            echo "::error::dist/ holds no *.tar.gz - the binaries job succeeded but its artifacts did not arrive. Refusing to publish a release with no assets."
+            ls -l dist/ || true
+            exit 1
+          fi
+          echo "dist/ holds ${#tarballs[@]} tar.gz asset(s):"
+          printf '  %s\n' "${tarballs[@]}"
       # The .zip and -setup.exe globs are the Windows ARM64 beta and match
       # nothing else today. They must stay tolerant of matching nothing:
       # action-gh-release only errors on an unmatched glob when

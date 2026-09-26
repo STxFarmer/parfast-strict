@@ -1250,7 +1250,7 @@ pub fn create_into_exact_with_comment(
 /// inert control is one `Option` branch per already-chunked loop; the
 /// A/B that says so is
 /// `research/PAR2GEN-CREATE-CONTROL-AB-2026-09-12.md`.
-#[allow(clippy::too_many_arguments)]
+#[expect(clippy::too_many_arguments)]
 pub fn create_into_exact_controlled(
     dir: &Path,
     members: &[Member],
@@ -1416,7 +1416,7 @@ fn write_member(
 /// for any other reason (a member that changed under it, a full disk)
 /// leaves what it left, exactly as it always has, because that is a
 /// diagnosis and not a user's decision.
-#[allow(clippy::too_many_arguments)]
+#[expect(clippy::too_many_arguments)]
 fn create_into_inner(
     dir: &Path,
     members: &[Member],
@@ -1451,7 +1451,7 @@ fn create_into_inner(
 /// [`create_into_inner`]'s body: everything between the input refusals
 /// and the finished list of names. Split from it on 12 Sep 2026 only so
 /// the cancel's unlink has one place to happen, by any exit.
-#[allow(clippy::too_many_arguments)]
+#[expect(clippy::too_many_arguments)]
 fn create_body(
     dir: &Path,
     members: &[Member],
@@ -1872,7 +1872,7 @@ fn create_body(
 /// `create_body` unchanged on 15 Sep 2026, when that function stood at
 /// 486 of its 500-line ceiling; it is one self-contained block whose only
 /// product the body reads afterwards is the scan.
-#[allow(clippy::too_many_arguments)]
+#[expect(clippy::too_many_arguments)]
 fn create_route(
     members: &[Member],
     lengths: &[u64],
@@ -2586,7 +2586,7 @@ fn fold_batches(layout: &[(usize, usize)], per_batch: usize) -> Vec<(usize, usiz
     out
 }
 
-#[allow(clippy::too_many_arguments)]
+#[expect(clippy::too_many_arguments)]
 fn recovery_slices(
     scanned: &[(PathBuf, u64)],
     block_size: u64,
@@ -2609,10 +2609,13 @@ fn recovery_slices(
 
     let bs = block_size as usize;
     let per_read = ((read_budget / block_size).max(1) as usize).min(n_slices);
-    // Mutated before the window loop only by the unix mapped path's
-    // fold fallback, so the Windows build sees no mutation until the
-    // arena moves into `FoldWindows`.
-    #[cfg_attr(not(unix), allow(unused_mut))]
+    // The `mut` is live on every platform: `ntt::mapped_attempt` below
+    // takes `&mut arena`, and the mapped path is admitted by a RUNTIME
+    // check (`map_inputs_enabled`), not a `cfg`. This carried a
+    // `#[cfg_attr(not(unix), allow(unused_mut))]` from when that path
+    // was unix-gated; measured on x86_64-pc-windows-gnu 21 Sep 2026,
+    // `unused_mut` does not fire there, so the waiver suppressed
+    // nothing and was deleted rather than noted.
     let mut arena = vec![0u8; per_read * bs];
     // The global slice list: (member, byte offset, want) in input-slice
     // order, so an arena-full is a contiguous window of it and the base

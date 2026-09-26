@@ -2404,6 +2404,8 @@
  "set.watchdir.extunrar": "Unpack with external unrar",
  "set.watchdir.extunrar.hint": "use the unrar program installed on this machine instead of nzbfast's built-in extractor. An escape hatch for archives that fail to unpack: the built-in path is faster on every shape we have benchmarked, so leave this off unless one does. Hash-named obfuscated posts always use the built-in path, whose renaming unrar cannot follow. Needs unrar next to the nzbfast binary or on the system PATH",
  "set.watchdir.extunrar.missing": "unrar is not installed, so nzbfast keeps unpacking with its built-in extractor. Install unrar, or put it beside the nzbfast program, and this setting takes effect on the very next unpack.",
+ "set.watchdir.faileddelete": "Delete files of failed downloads",
+ "set.watchdir.faileddelete.hint": "when a download fails for good, remove what it left in the download folder, so failures do not pile up and fill the disk. The failure stays in History and can still be retried, but a retry downloads everything again. Downloads waiting for a password, and ones that are about to be retried automatically, keep their files. Off by default, because the leftover files are what a retry or a hand extraction works from",
  "set.watchdir.faillink": "When a download fails",
  "set.watchdir.faillink.hint": "some indexers attach a report link to every NZB they serve. Telling them a post is dead is how they learn to stop offering it, and they usually answer with another copy of the same title. Only works for NZBs fetched by URL (RSS, Add-by-URL, your indexer's \"send to\" button) - a file you dropped in yourself carries no link. Off by default: it tells a third party what failed for you",
  "set.watchdir.faillink.off": "do nothing",

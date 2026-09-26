@@ -50,6 +50,14 @@ PATTERNS=$(grep -v '^[[:space:]]*#' "$PATTERNS_FILE" | grep -v '^[[:space:]]*$' 
     exit 1
 }
 
+# ZERO ARGUMENTS IS A REFUSAL, the same rule as the missing-list refusals
+# above: a check that was handed nothing to read must not exit 0 as if it
+# had read something (21 Sep 2026 empty-set census, 2.8).
+[ $# -gt 0 ] || {
+    echo "assert-no-private-strings: REFUSING - no binary given, so NOTHING was scanned. usage: assert-no-private-strings.sh <binary>..." >&2
+    exit 1
+}
+
 rc=0
 for f in "$@"; do
     [ -f "$f" ] || { echo "assert-no-private-strings: no such file: $f" >&2; rc=1; continue; }
