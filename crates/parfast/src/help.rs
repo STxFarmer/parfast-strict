@@ -140,6 +140,11 @@ Options: (create)
            : Stop rather than write over a file that is already there
              under one of this set's names. Off by default: creating a
              set again over the old one is ordinary use
+  --strict-block-size
+           : Use the -s block size exactly as given or stop (exit 3).
+             Off by default: a -s that is not a multiple of 4 is rounded
+             up, and one too small for the payload is raised to a
+             multiple that fits
    @       : Process a listing of files specified in text (file) input
              (eg. @filelist.txt, or bare @ to read from stdin)
 
@@ -155,7 +160,13 @@ Example:
 
 /// `-V`.
 pub fn version_line() -> String {
-    format!("parfast version {}", env!("CARGO_PKG_VERSION"))
+    // "(strict-block-size)" marks this build as the one that carries the
+    // `--strict-block-size` switch, so it can be told from upstream's
+    // parfast of the same version. The number is still the crate's own.
+    format!(
+        "parfast version {} (strict-block-size)",
+        env!("CARGO_PKG_VERSION")
+    )
 }
 
 /// `-VV`, the source this binary was built from.

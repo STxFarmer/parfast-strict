@@ -1,0 +1,148 @@
+# parfast-strict: build, test and release the patched parfast.
+#
+# Runs on every push to main and on every tag named parfast-strict-v*.
+# Both jobs build parfast with the toolchain pinned by rust-toolchain.toml,
+# run the three strict-mode tests and the parfast test suite, and keep the
+# packaged binary as an artifact. On a tag, a GitHub Release is created
+# with both archives and their SHA-256 checksums.
+name: parfast-strict build
+
+on:
+  push:
+    branches: [main]
+    tags: ['parfast-strict-v*']
+
+permissions:
+  contents: read
+
+env:
+  # The upstream commit this repository's single patch commit sits on.
+  # Change it when the patch is rebased onto a newer upstream release.
+  UPSTREAM_COMMIT: 370da77
+  UPSTREAM_TAG: parfast-v1.7.1
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-x64
+            os: windows-latest
+          - name: linux-x64
+            os: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      # Windows is built for x86_64-pc-windows-gnu with the MSYS2 compiler,
+      # the same set-up the patch was first built and tested with.
+      - name: Install the MSYS2 compiler (Windows)
+        if: runner.os == 'Windows'
+        id: msys2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          install: >-
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-ninja
+            mingw-w64-x86_64-nasm
+
+      - name: Put the MSYS2 compiler on PATH (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Add-Content $env:GITHUB_PATH "${{ steps.msys2.outputs.msys2-location }}\mingw64\bin"
+          rustup set default-host x86_64-pc-windows-gnu
+
+      - name: Install the pinned Rust toolchain
+        run: |
+          rustup toolchain install
+          rustc --version
+          cargo --version
+
+      - name: Build
+        run: cargo build --release --locked -p parfast
+
+      - name: Strict-mode tests
+        run: python .github/scripts/strict-mode-tests.py "target/release/parfast${{ runner.os == 'Windows' && '.exe' || '' }}"
+
+      - name: parfast test suite
+        run: cargo test --release --locked -p parfast
+
+      - name: Name the archive
+        id: label
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/parfast-strict-* ]]; then
+            echo "label=${GITHUB_REF_NAME#parfast-strict-}" >> "$GITHUB_OUTPUT"
+          else
+            echo "label=${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory pkg | Out-Null
+          Copy-Item target\release\parfast.exe, LICENSE, COPYRIGHT.md, README.md, README-strict.md pkg\
+          Compress-Archive -Path pkg\* -DestinationPath "parfast-strict-${{ steps.label.outputs.label }}-windows-x64.zip"
+
+      - name: Package (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          mkdir pkg
+          cp target/release/parfast LICENSE COPYRIGHT.md README.md README-strict.md pkg/
+          tar -C pkg -czf "parfast-strict-${{ steps.label.outputs.label }}-linux-x64.tar.gz" .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: parfast-strict-${{ steps.label.outputs.label }}-${{ matrix.name }}
+          path: |
+            parfast-strict-*.zip
+            parfast-strict-*.tar.gz
+          if-no-files-found: error
+
+  release:
+    name: release
+    if: startsWith(github.ref, 'refs/tags/parfast-strict-v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Write the release notes
+        run: |
+          cd dist
+          {
+            echo "parfast (nzbfast) with the \`--strict-block-size\` switch."
+            echo
+            echo "- Upstream: https://github.com/nzbfast/nzbfast, tag \`$UPSTREAM_TAG\`, commit \`$UPSTREAM_COMMIT\`"
+            echo "- Patch commit (the source of these binaries): \`$GITHUB_SHA\`"
+            echo "- Licence: GPL-3.0-or-later, the same as upstream. The complete source for these binaries is this tag."
+            echo
+            echo "SHA-256:"
+            echo
+            echo '```'
+            sha256sum parfast-strict-*
+            echo '```'
+          } > ../notes.md
+          cat ../notes.md
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/parfast-strict-* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "$GITHUB_REF_NAME" \
+            --notes-file notes.md

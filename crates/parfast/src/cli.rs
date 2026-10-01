@@ -159,6 +159,23 @@ pub struct Options {
     /// command for `--slow`'s wrapper reason; on verify and repair it
     /// only lifts the `-q` gate off the meters they already draw.
     pub progress: bool,
+    /// `--strict-block-size`: the `-s` the caller gave is the block size
+    /// the set is written at, or the create is refused. Turns the two
+    /// places parfast adjusts a caller's `-s` back into par2cmdline's
+    /// refusals, in its wording and with its exit code (3):
+    ///
+    /// - `-s0` and a `-s` that is not a multiple of 4 are refused at
+    ///   parse time, where the default rounds up to the next multiple;
+    /// - a `-s` the payload needs more than 32,768 slices at is refused
+    ///   before anything is written, where the default raises it to a
+    ///   multiple that fits (`create::legal_block_size`).
+    ///
+    /// Off by default, so a bare `parfast c -s...` behaves as it always
+    /// has. It does nothing when `-s` was not given: `-b` and the default
+    /// block count still choose a size. Not a reference switch, so a long
+    /// option per spec R.3, and accepted on every command for `--slow`'s
+    /// wrapper reason.
+    pub strict_block_size: bool,
     /// `-a`, with the reference's `.par2` suffix already appended when
     /// the switch did not carry one. NOT folded into `par2` at parse
     /// time, because the two commands resolve the pair differently:
@@ -409,6 +426,22 @@ fn parse_options(command: Command, args: &[String]) -> Result<Options, ParseErro
             "Cannot specify both block count and block size.",
         ));
     }
+    // `--strict-block-size`: the reference's two parse-time refusals of
+    // a `-s` value, which the default rounds up instead
+    // (`create::block_size`). Checked AFTER the whole line because the
+    // switch and `-s` may arrive in either order.
+    if o.strict_block_size
+        && let Some(s) = o.block_size
+    {
+        if s == 0 {
+            return Err(ParseError::msg(format!(
+                "Invalid block size option: -s{s}"
+            )));
+        }
+        if !s.is_multiple_of(4) {
+            return Err(ParseError::msg("Block size must be a multiple of 4."));
+        }
+    }
     if o.uniform && o.limit {
         return Err(ParseError::msg(
             "Cannot specify uniform and limit at the same time.",
@@ -628,6 +661,10 @@ fn apply_switch(
         // `Options::progress`). A long option for spec R.3's reason,
         // accepted on every command for the same wrapper reason.
         '-' if value == "progress" => o.progress = true,
+        // `-s` is used as given or the create is refused (see
+        // `Options::strict_block_size`). A long option for spec R.3's
+        // reason, accepted on every command for the same wrapper reason.
+        '-' if value == "strict-block-size" => o.strict_block_size = true,
         // An explicit ceiling on one volume's recovery slice count.
         // The engine has honoured an arbitrary ceiling all along
         // (`par2gen::CreatePlan::max_blocks_per_volume`); what was

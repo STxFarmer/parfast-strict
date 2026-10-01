@@ -125,6 +125,23 @@ pub fn run_watched(opts: &Options, sink: &mut Sink, watch: &dyn CreateWatch) -> 
         .map(|m| std::fs::metadata(&m.path).map(|md| md.len()).unwrap_or(0))
         .collect();
     let (block_size, raised_from) = block_size(opts, &lengths);
+    // `--strict-block-size`: a `-s` the payload cannot carry is the
+    // reference's refusal - its wording (missing space included), its
+    // exit code, stderr, and nothing written - rather than a raise. Only
+    // for a size the caller GAVE: `-b` and the default count are
+    // parfast's own choice of size and stay free to land on a legal one.
+    // `was` is the caller's own figure here, because the parser has
+    // already refused a strict `-s` that would have needed rounding.
+    if opts.strict_block_size
+        && opts.block_size.is_some()
+        && let Some(was) = raised_from
+    {
+        sink.err(&format!(
+            "Block size is too small. It would require {}blocks.",
+            slice_total(&lengths, was)
+        ));
+        return crate::EXIT_INVALID_ARGS;
+    }
     // Say so when we moved the user's own choice. Silently writing a set at a
     // size they did not ask for is worse than the refusal it replaces.
     if let Some(was) = raised_from {

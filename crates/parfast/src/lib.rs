@@ -680,6 +680,39 @@ mod switch_tests {
         }
     }
 
+    /// `--strict-block-size` is opt-in, accepted on every command, and
+    /// turns a `-s` parfast would have rounded into the reference's own
+    /// refusal - in either switch order, and only when it is given.
+    #[test]
+    fn strict_block_size_is_opt_in_and_refuses_a_size_it_would_round() {
+        let parse = |args: &[&str]| {
+            let v: Vec<String> = args.iter().map(|s| (*s).to_string()).collect();
+            super::cli::parse("parfast", &v)
+        };
+        for cmd in ["c", "v", "r"] {
+            let p = parse(&[cmd, "--strict-block-size", "set.par2"]).expect("accepted");
+            assert!(p.opts.strict_block_size, "cmd={cmd}");
+            let p = parse(&[cmd, "set.par2"]).expect("the bare command parses");
+            assert!(!p.opts.strict_block_size, "cmd={cmd} must default to off");
+        }
+        // Without the switch a ragged size still parses (and is rounded
+        // up by `create::block_size`, as it always was).
+        assert!(parse(&["c", "-s105118", "set.par2", "f"]).is_ok());
+        assert!(parse(&["c", "-s0", "set.par2", "f"]).is_ok());
+        for line in [
+            ["c", "--strict-block-size", "-s105118", "set.par2"],
+            ["c", "-s105118", "--strict-block-size", "set.par2"],
+        ] {
+            let e = parse(&line).expect_err("a ragged strict -s is refused");
+            assert_eq!(e.message, "Block size must be a multiple of 4.");
+        }
+        let e = parse(&["c", "--strict-block-size", "-s0", "set.par2"]).expect_err("-s0");
+        assert_eq!(e.message, "Invalid block size option: -s0");
+        assert!(parse(&["c", "--strict-block-size", "-s105120", "set.par2"]).is_ok());
+        // `-b` is not a size the caller gave: strict leaves it alone.
+        assert!(parse(&["c", "--strict-block-size", "-b100", "set.par2"]).is_ok());
+    }
+
     /// `--progress` (GH #88) is opt-in, accepted on every command for
     /// the wrapper reason the other long options are, and not reached
     /// by a near-miss spelling.

@@ -1,0 +1,165 @@
+diff --git a/crates/parfast/src/cli.rs b/crates/parfast/src/cli.rs
+index f5b750c..948a04a 100644
+--- a/crates/parfast/src/cli.rs
++++ b/crates/parfast/src/cli.rs
+@@ -159,6 +159,23 @@ pub struct Options {
+     /// command for `--slow`'s wrapper reason; on verify and repair it
+     /// only lifts the `-q` gate off the meters they already draw.
+     pub progress: bool,
++    /// `--strict-block-size`: the `-s` the caller gave is the block size
++    /// the set is written at, or the create is refused. Turns the two
++    /// places parfast adjusts a caller's `-s` back into par2cmdline's
++    /// refusals, in its wording and with its exit code (3):
++    ///
++    /// - `-s0` and a `-s` that is not a multiple of 4 are refused at
++    ///   parse time, where the default rounds up to the next multiple;
++    /// - a `-s` the payload needs more than 32,768 slices at is refused
++    ///   before anything is written, where the default raises it to a
++    ///   multiple that fits (`create::legal_block_size`).
++    ///
++    /// Off by default, so a bare `parfast c -s...` behaves as it always
++    /// has. It does nothing when `-s` was not given: `-b` and the default
++    /// block count still choose a size. Not a reference switch, so a long
++    /// option per spec R.3, and accepted on every command for `--slow`'s
++    /// wrapper reason.
++    pub strict_block_size: bool,
+     /// `-a`, with the reference's `.par2` suffix already appended when
+     /// the switch did not carry one. NOT folded into `par2` at parse
+     /// time, because the two commands resolve the pair differently:
+@@ -409,6 +426,22 @@ fn parse_options(command: Command, args: &[String]) -> Result<Options, ParseErro
+             "Cannot specify both block count and block size.",
+         ));
+     }
++    // `--strict-block-size`: the reference's two parse-time refusals of
++    // a `-s` value, which the default rounds up instead
++    // (`create::block_size`). Checked AFTER the whole line because the
++    // switch and `-s` may arrive in either order.
++    if o.strict_block_size
++        && let Some(s) = o.block_size
++    {
++        if s == 0 {
++            return Err(ParseError::msg(format!(
++                "Invalid block size option: -s{s}"
++            )));
++        }
++        if !s.is_multiple_of(4) {
++            return Err(ParseError::msg("Block size must be a multiple of 4."));
++        }
++    }
+     if o.uniform && o.limit {
+         return Err(ParseError::msg(
+             "Cannot specify uniform and limit at the same time.",
+@@ -628,6 +661,10 @@ fn apply_switch(
+         // `Options::progress`). A long option for spec R.3's reason,
+         // accepted on every command for the same wrapper reason.
+         '-' if value == "progress" => o.progress = true,
++        // `-s` is used as given or the create is refused (see
++        // `Options::strict_block_size`). A long option for spec R.3's
++        // reason, accepted on every command for the same wrapper reason.
++        '-' if value == "strict-block-size" => o.strict_block_size = true,
+         // An explicit ceiling on one volume's recovery slice count.
+         // The engine has honoured an arbitrary ceiling all along
+         // (`par2gen::CreatePlan::max_blocks_per_volume`); what was
+diff --git a/crates/parfast/src/create.rs b/crates/parfast/src/create.rs
+index 5b0d194..7d79a87 100644
+--- a/crates/parfast/src/create.rs
++++ b/crates/parfast/src/create.rs
+@@ -125,6 +125,23 @@ pub fn run_watched(opts: &Options, sink: &mut Sink, watch: &dyn CreateWatch) ->
+         .map(|m| std::fs::metadata(&m.path).map(|md| md.len()).unwrap_or(0))
+         .collect();
+     let (block_size, raised_from) = block_size(opts, &lengths);
++    // `--strict-block-size`: a `-s` the payload cannot carry is the
++    // reference's refusal - its wording (missing space included), its
++    // exit code, stderr, and nothing written - rather than a raise. Only
++    // for a size the caller GAVE: `-b` and the default count are
++    // parfast's own choice of size and stay free to land on a legal one.
++    // `was` is the caller's own figure here, because the parser has
++    // already refused a strict `-s` that would have needed rounding.
++    if opts.strict_block_size
++        && opts.block_size.is_some()
++        && let Some(was) = raised_from
++    {
++        sink.err(&format!(
++            "Block size is too small. It would require {}blocks.",
++            slice_total(&lengths, was)
++        ));
++        return crate::EXIT_INVALID_ARGS;
++    }
+     // Say so when we moved the user's own choice. Silently writing a set at a
+     // size they did not ask for is worse than the refusal it replaces.
+     if let Some(was) = raised_from {
+diff --git a/crates/parfast/src/help.rs b/crates/parfast/src/help.rs
+index 68d01ab..f197125 100644
+--- a/crates/parfast/src/help.rs
++++ b/crates/parfast/src/help.rs
+@@ -140,6 +140,11 @@ Options: (create)
+            : Stop rather than write over a file that is already there
+              under one of this set's names. Off by default: creating a
+              set again over the old one is ordinary use
++  --strict-block-size
++           : Use the -s block size exactly as given or stop (exit 3).
++             Off by default: a -s that is not a multiple of 4 is rounded
++             up, and one too small for the payload is raised to a
++             multiple that fits
+    @       : Process a listing of files specified in text (file) input
+              (eg. @filelist.txt, or bare @ to read from stdin)
+ 
+@@ -155,7 +160,13 @@ Example:
+ 
+ /// `-V`.
+ pub fn version_line() -> String {
+-    format!("parfast version {}", env!("CARGO_PKG_VERSION"))
++    // "(strict-block-size)" marks this build as the one that carries the
++    // `--strict-block-size` switch, so it can be told from upstream's
++    // parfast of the same version. The number is still the crate's own.
++    format!(
++        "parfast version {} (strict-block-size)",
++        env!("CARGO_PKG_VERSION")
++    )
+ }
+ 
+ /// `-VV`, the source this binary was built from.
+diff --git a/crates/parfast/src/lib.rs b/crates/parfast/src/lib.rs
+index b2084f0..7bcf937 100644
+--- a/crates/parfast/src/lib.rs
++++ b/crates/parfast/src/lib.rs
+@@ -680,6 +680,39 @@ mod switch_tests {
+         }
+     }
+ 
++    /// `--strict-block-size` is opt-in, accepted on every command, and
++    /// turns a `-s` parfast would have rounded into the reference's own
++    /// refusal - in either switch order, and only when it is given.
++    #[test]
++    fn strict_block_size_is_opt_in_and_refuses_a_size_it_would_round() {
++        let parse = |args: &[&str]| {
++            let v: Vec<String> = args.iter().map(|s| (*s).to_string()).collect();
++            super::cli::parse("parfast", &v)
++        };
++        for cmd in ["c", "v", "r"] {
++            let p = parse(&[cmd, "--strict-block-size", "set.par2"]).expect("accepted");
++            assert!(p.opts.strict_block_size, "cmd={cmd}");
++            let p = parse(&[cmd, "set.par2"]).expect("the bare command parses");
++            assert!(!p.opts.strict_block_size, "cmd={cmd} must default to off");
++        }
++        // Without the switch a ragged size still parses (and is rounded
++        // up by `create::block_size`, as it always was).
++        assert!(parse(&["c", "-s105118", "set.par2", "f"]).is_ok());
++        assert!(parse(&["c", "-s0", "set.par2", "f"]).is_ok());
++        for line in [
++            ["c", "--strict-block-size", "-s105118", "set.par2"],
++            ["c", "-s105118", "--strict-block-size", "set.par2"],
++        ] {
++            let e = parse(&line).expect_err("a ragged strict -s is refused");
++            assert_eq!(e.message, "Block size must be a multiple of 4.");
++        }
++        let e = parse(&["c", "--strict-block-size", "-s0", "set.par2"]).expect_err("-s0");
++        assert_eq!(e.message, "Invalid block size option: -s0");
++        assert!(parse(&["c", "--strict-block-size", "-s105120", "set.par2"]).is_ok());
++        // `-b` is not a size the caller gave: strict leaves it alone.
++        assert!(parse(&["c", "--strict-block-size", "-b100", "set.par2"]).is_ok());
++    }
++
+     /// `--progress` (GH #88) is opt-in, accepted on every command for
+     /// the wrapper reason the other long options are, and not reached
+     /// by a near-miss spelling.

@@ -2,6 +2,8 @@
 
 nzbfast - Copyright (C) 2026 The nzbfast Authors.
 
+Modifications (--strict-block-size) © 2026 STxFarmer, released under the same licence.
+
 nzbfast is free software: you may redistribute it and/or modify it under
 the terms of the **GNU General Public License, version 3 or (at your
 option) any later version**, as published by the Free Software
