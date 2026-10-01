@@ -1,3 +1,7 @@
+> **This is parfast-strict:** nzbfast v1.7.1 plus one switch for parfast,
+> `--strict-block-size`. See [README-strict.md](README-strict.md). Everything
+> below is upstream's README, unchanged.
+
 # nzbfast
 
 **The fast Usenet downloader.** One self-contained executable: download engine,
