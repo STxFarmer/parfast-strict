@@ -1,8 +1,12 @@
 # parfast-strict
 
 This repository is [nzbfast](https://github.com/nzbfast/nzbfast) v1.7.1 with
-one change to its PAR2 tool, parfast: a new switch, `--strict-block-size`.
-The version line says so; nothing else is different. The switch exists for posting programs that work out
+two changes to its PAR2 tool, parfast: a new switch, `--strict-block-size`
+(v1.7.1 of this repository), and a progress fix (v1.7.2: the mapped
+transform, the path a large create takes, now reports `Processing:` as it
+runs instead of printing `0.0%` and then `100.0%` with nothing between; the
+`.par2` bytes are unchanged). The version line names the switch; nothing
+else is different. The switch exists for posting programs that work out
 the PAR2 geometry themselves. Such a program needs the PAR2 engine to build the
 set at exactly the block size it was given, or to refuse. Upstream parfast
 instead adjusts the block size and carries on, which the caller cannot see from
@@ -72,4 +76,7 @@ The same checks run on every build of this repository:
 - Licence: GPL-3.0-or-later, the same as upstream. See [LICENSE](LICENSE) and
   [COPYRIGHT.md](COPYRIGHT.md).
 - The source for every released binary is the tagged commit it was built from.
-  Release tags are named `parfast-strict-v<upstream version>`.
+  Release tags are named `parfast-strict-v<version of this repository>`;
+  the upstream tag each one sits on is named in its release notes.
+- The progress fix as one patch file:
+  [`docs/parfast-strict-progress.patch`](docs/parfast-strict-progress.patch).

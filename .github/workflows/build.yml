@@ -75,6 +75,9 @@ jobs:
       - name: parfast test suite
         run: cargo test --release --locked -p parfast
 
+      - name: Create-transform tests (the progress fix's own test is here)
+        run: cargo test --release --locked -p nzbkit --test integration par2gen_create_ntt
+
       - name: Name the archive
         id: label
         run: |

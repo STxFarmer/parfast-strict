@@ -1,0 +1,129 @@
+diff --git a/crates/nzbkit-base/src/par2gen/ntt.rs b/crates/nzbkit-base/src/par2gen/ntt.rs
+index 252ec84..e42a027 100644
+--- a/crates/nzbkit-base/src/par2gen/ntt.rs
++++ b/crates/nzbkit-base/src/par2gen/ntt.rs
+@@ -168,6 +168,17 @@ pub(super) fn mapped_attempt(
+                                     };
+                                     dst.copy_from_slice(&out[e * len..(e + 1) * len]);
+                                 }
++                                // One stripe of every input block is
++                                // done: `len` words, two bytes each,
++                                // across `n_slices` blocks - the unit
++                                // `begin(Fold, n_slices * bs)` counts
++                                // in. Without this the mapped arm said
++                                // 0.0% and then 100.0% with the whole
++                                // transform silent between, which a
++                                // scraper (ngPost, SABnzbd) reads as a
++                                // stalled bar. The bucket limiter in
++                                // `step` caps it at 256 sink calls.
++                                control.step(CreatePhase::Fold, n_slices as u64 * len as u64 * 2);
+                             }
+                         });
+                     }
+diff --git a/crates/nzbkit/tests/integration/par2gen_create_ntt.rs b/crates/nzbkit/tests/integration/par2gen_create_ntt.rs
+index 2009b9c..6d8e640 100644
+--- a/crates/nzbkit/tests/integration/par2gen_create_ntt.rs
++++ b/crates/nzbkit/tests/integration/par2gen_create_ntt.rs
+@@ -220,6 +220,102 @@ fn the_mapped_transform_writes_the_fold_s_bytes_and_the_set_repairs() {
+     repairs_real_damage(&t, "ntt");
+ }
+ 
++/// The mapped transform reports its fold AS IT RUNS, not only at its two
++/// ends.
++///
++/// Until 25 Oct 2026 `ntt::mapped_attempt`'s stripe workers never called
++/// `control.step(Fold, ..)`: a sink heard `(0, total)` from `begin`, then
++/// nothing for the whole transform, then `(total, total)` from `finish`.
++/// Every other arm steps. Through parfast's meter that was `Processing:
++/// 0.0%` and then `100.0%` with silence between, which a scraper (ngPost,
++/// SABnzbd) reads as a stalled bar - the mapped arm is the one a big
++/// single-file create takes, so it was the one that mattered most.
++///
++/// The fixture is the floor shape at a block of several STRIPES (8,192
++/// bytes is 4,096 words, eight 512-word stripes on every arch), because
++/// a step lands once per stripe and [`BS`]'s one stripe would step
++/// straight to full. `cold == 1` is the same proof as next door that the
++/// mapped arm ran, and the copied-window fallback would ALSO fail this
++/// assertion on a one-window corpus (it steps once, per window) - so a
++/// pass here is the mapped arm stepping per stripe and nothing else.
++#[test]
++fn the_mapped_transform_reports_its_fold_between_zero_and_full() {
++    use nzbkit::par2gen::control::{CreateControl, CreatePhase};
++    use nzbkit::par2gen::create_into_exact_controlled;
++    use nzbkit::par2repair::ProgressSink;
++    use std::sync::{Arc, Mutex};
++
++    const STRIPED_BS: u64 = 8192;
++
++    let _arms = Arms::take();
++    let (slices, rows) = ntt_range::floor_shape_for_tests(STRIPED_BS as usize);
++    let t = Tmp::new("mapped-progress");
++    let dir = t.0.join("ntt");
++    std::fs::create_dir_all(&dir).unwrap();
++    let members = fixture_at(&dir, slices, STRIPED_BS);
++
++    struct Samples(Mutex<Vec<(u64, u64)>>);
++    impl ProgressSink for Samples {
++        fn progress(&self, phase: CreatePhase, done: u64, total: u64) {
++            if phase == CreatePhase::Fold {
++                self.0.lock().unwrap().push((done, total));
++            }
++        }
++    }
++    let samples = Arc::new(Samples(Mutex::new(Vec::new())));
++    let sink: Arc<dyn ProgressSink> = samples.clone();
++    let control = CreateControl::new(Some(sink), None);
++
++    ntt_range::pin_transform_off_for_tests(false);
++    let before = ntt_range::cold_builds_for_tests();
++    let names = create_into_exact_controlled(
++        &dir,
++        &members,
++        "set",
++        Some(STRIPED_BS),
++        rows,
++        CreatePlan::ENGINE,
++        None,
++        &control,
++    )
++    .unwrap();
++    let cold = ntt_range::cold_builds_for_tests() - before;
++    assert!(names.len() > 2, "expected an index and volumes: {names:?}");
++    assert_transformed(cold, "mapped", slices, rows);
++    assert_eq!(
++        cold, 1,
++        "the mapped path builds ONE plan over the whole corpus"
++    );
++
++    let samples = samples.0.lock().unwrap().clone();
++    let total = slices as u64 * STRIPED_BS;
++    assert!(
++        samples.iter().all(|&(_, t)| t == total),
++        "every fold sample is sized to the whole payload: {samples:?}"
++    );
++    let between: Vec<u64> = samples
++        .iter()
++        .map(|&(d, _)| d)
++        .filter(|&d| d > 0 && d < total)
++        .collect();
++    assert!(
++        between.len() >= 4,
++        "the mapped transform reported {} fold sample(s) strictly between 0 and {total} \
++         (eight stripes, at most one report each, and the bucket limiter drops none of \
++         them at this grain); the whole transform was silent - samples: {samples:?}",
++        between.len()
++    );
++    assert!(
++        between.windows(2).all(|w| w[0] < w[1]),
++        "fold samples must rise: {between:?}"
++    );
++    assert_eq!(
++        samples.last().map(|&(d, _)| d),
++        Some(total),
++        "the fold must land on full: {samples:?}"
++    );
++}
++
+ #[test]
+ fn the_copied_window_fallback_writes_the_fold_s_bytes() {
+     // The branch a box without usable mappings takes. It is a second
