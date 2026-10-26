@@ -168,6 +168,17 @@ pub(super) fn mapped_attempt(
                                     };
                                     dst.copy_from_slice(&out[e * len..(e + 1) * len]);
                                 }
+                                // One stripe of every input block is
+                                // done: `len` words, two bytes each,
+                                // across `n_slices` blocks - the unit
+                                // `begin(Fold, n_slices * bs)` counts
+                                // in. Without this the mapped arm said
+                                // 0.0% and then 100.0% with the whole
+                                // transform silent between, which a
+                                // scraper (ngPost, SABnzbd) reads as a
+                                // stalled bar. The bucket limiter in
+                                // `step` caps it at 256 sink calls.
+                                control.step(CreatePhase::Fold, n_slices as u64 * len as u64 * 2);
                             }
                         });
                     }
