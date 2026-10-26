@@ -39,6 +39,11 @@ cargo build --release -p parfast
 
 The binary is `target/release/parfast` (`parfast.exe` on Windows).
 
+Each release carries four archives built by this repository's workflow:
+Windows x64 (`.zip`), Linux x64, macOS Apple Silicon (`macos-arm64`) and
+macOS Intel (`macos-x64`) (`.tar.gz`), with the SHA-256 of each in the
+release notes.
+
 ## Verify
 
 ```
