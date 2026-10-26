@@ -31,8 +31,24 @@ jobs:
         include:
           - name: windows-x64
             os: windows-latest
+            test: true
           - name: linux-x64
             os: ubuntu-latest
+            test: true
+          # macOS, both architectures, the way upstream's release.yml
+          # builds them (one Apple Silicon runner, MACOSX_DEPLOYMENT_TARGET
+          # 11.0). The Intel binary is cross-built on that runner and so is
+          # built but not run: `test: false` skips its test steps. Every
+          # entry sets `test`: GitHub compares a missing value as 0, which
+          # would read `!= false` as false and skip the tests silently.
+          - name: macos-arm64
+            os: macos-latest
+            target: aarch64-apple-darwin
+            test: true
+          - name: macos-x64
+            os: macos-latest
+            target: x86_64-apple-darwin
+            test: false
     defaults:
       run:
         shell: bash
@@ -66,17 +82,36 @@ jobs:
           rustc --version
           cargo --version
 
+      # Where cargo puts the binary: `target/release` with no explicit
+      # target (Windows, Linux), `target/<triple>/release` with one (macOS).
+      - name: Target flag and binary path
+        id: tgt
+        run: |
+          if [[ -n "${{ matrix.target }}" ]]; then
+            rustup target add "${{ matrix.target }}"
+            echo "flag=--target ${{ matrix.target }}" >> "$GITHUB_OUTPUT"
+            echo "bin=target/${{ matrix.target }}/release/parfast" >> "$GITHUB_OUTPUT"
+          else
+            echo "flag=" >> "$GITHUB_OUTPUT"
+            echo "bin=target/release/parfast${{ runner.os == 'Windows' && '.exe' || '' }}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Build
-        run: cargo build --release --locked -p parfast
+        env:
+          MACOSX_DEPLOYMENT_TARGET: "11.0"
+        run: cargo build --release --locked -p parfast ${{ steps.tgt.outputs.flag }}
 
       - name: Strict-mode tests
-        run: python .github/scripts/strict-mode-tests.py "target/release/parfast${{ runner.os == 'Windows' && '.exe' || '' }}"
+        if: matrix.test != false
+        run: ${{ runner.os == 'Windows' && 'python' || 'python3' }} .github/scripts/strict-mode-tests.py "${{ steps.tgt.outputs.bin }}"
 
       - name: parfast test suite
-        run: cargo test --release --locked -p parfast
+        if: matrix.test != false
+        run: cargo test --release --locked -p parfast ${{ steps.tgt.outputs.flag }}
 
       - name: Create-transform tests (the progress fix's own test is here)
-        run: cargo test --release --locked -p nzbkit --test integration par2gen_create_ntt
+        if: matrix.test != false
+        run: cargo test --release --locked -p nzbkit --test integration par2gen_create_ntt ${{ steps.tgt.outputs.flag }}
 
       - name: Name the archive
         id: label
@@ -95,12 +130,13 @@ jobs:
           Copy-Item target\release\parfast.exe, LICENSE, COPYRIGHT.md, README.md, README-strict.md pkg\
           Compress-Archive -Path pkg\* -DestinationPath "parfast-strict-${{ steps.label.outputs.label }}-windows-x64.zip"
 
-      - name: Package (Linux)
-        if: runner.os == 'Linux'
+      - name: Package (Linux, macOS)
+        if: runner.os != 'Windows'
         run: |
           mkdir pkg
-          cp target/release/parfast LICENSE COPYRIGHT.md README.md README-strict.md pkg/
-          tar -C pkg -czf "parfast-strict-${{ steps.label.outputs.label }}-linux-x64.tar.gz" .
+          cp "${{ steps.tgt.outputs.bin }}" LICENSE COPYRIGHT.md README.md README-strict.md pkg/
+          # COPYFILE_DISABLE keeps macOS resource forks out; harmless elsewhere.
+          COPYFILE_DISABLE=1 tar -C pkg -czf "parfast-strict-${{ steps.label.outputs.label }}-${{ matrix.name }}.tar.gz" .
 
       - uses: actions/upload-artifact@v4
         with:
