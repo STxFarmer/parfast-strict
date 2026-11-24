@@ -1,5 +1,5 @@
-> **This is parfast-strict:** nzbfast v1.7.1 plus one switch for parfast,
-> `--strict-block-size`. See [README-strict.md](README-strict.md). Everything
+> **This is parfast-strict:** nzbfast v1.10.0 plus one switch for parfast,
+> `--strict-block-size`, and a progress fix. See [README-strict.md](README-strict.md). Everything
 > below is upstream's README, unchanged.
 
 # nzbfast

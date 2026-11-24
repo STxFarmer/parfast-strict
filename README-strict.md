@@ -1,8 +1,8 @@
 # parfast-strict
 
-This repository is [nzbfast](https://github.com/nzbfast/nzbfast) v1.7.1 with
+This repository is [nzbfast](https://github.com/nzbfast/nzbfast) v1.10.0 with
 two changes to its PAR2 tool, parfast: a new switch, `--strict-block-size`
-(v1.7.1 of this repository), and a progress fix (v1.7.2: the mapped
+(first released as v1.7.1 of this repository), and a progress fix (v1.7.2: the mapped
 transform, the path a large create takes, now reports `Processing:` as it
 runs instead of printing `0.0%` and then `100.0%` with nothing between; the
 `.par2` bytes are unchanged). The version line names the switch; nothing
@@ -50,8 +50,8 @@ release notes.
 parfast --version
 ```
 
-Expected: `parfast version 1.7.1 (strict-block-size)`. Upstream's parfast
-prints `parfast version 1.7.1`.
+Expected: `parfast version 1.10.0 (strict-block-size)`. Upstream's parfast
+prints `parfast version 1.10.0`.
 
 Make a file of exactly 131,073 bytes, called `over.bin` here.
 
@@ -74,8 +74,8 @@ The same checks run on every build of this repository:
 
 ## Source, patch and licence
 
-- Upstream: <https://github.com/nzbfast/nzbfast>, tag `parfast-v1.7.1`
-  (commit `370da77`).
+- Upstream: <https://github.com/nzbfast/nzbfast>, tag `parfast-v1.10.0`
+  (commit `4e9e204`).
 - The whole change as one patch file:
   [`docs/parfast-strict-block-size.patch`](docs/parfast-strict-block-size.patch).
 - Licence: GPL-3.0-or-later, the same as upstream. See [LICENSE](LICENSE) and

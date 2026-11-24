@@ -1,8 +1,8 @@
 diff --git a/crates/parfast/src/cli.rs b/crates/parfast/src/cli.rs
-index f5b750c..948a04a 100644
+index fd04358..b603960 100644
 --- a/crates/parfast/src/cli.rs
 +++ b/crates/parfast/src/cli.rs
-@@ -159,6 +159,23 @@ pub struct Options {
+@@ -183,6 +183,23 @@ pub struct Options {
      /// command for `--slow`'s wrapper reason; on verify and repair it
      /// only lifts the `-q` gate off the meters they already draw.
      pub progress: bool,
@@ -26,7 +26,7 @@ index f5b750c..948a04a 100644
      /// `-a`, with the reference's `.par2` suffix already appended when
      /// the switch did not carry one. NOT folded into `par2` at parse
      /// time, because the two commands resolve the pair differently:
-@@ -409,6 +426,22 @@ fn parse_options(command: Command, args: &[String]) -> Result<Options, ParseErro
+@@ -444,6 +461,22 @@ fn parse_options(command: Command, args: &[String]) -> Result<Options, ParseErro
              "Cannot specify both block count and block size.",
          ));
      }
@@ -49,7 +49,7 @@ index f5b750c..948a04a 100644
      if o.uniform && o.limit {
          return Err(ParseError::msg(
              "Cannot specify uniform and limit at the same time.",
-@@ -628,6 +661,10 @@ fn apply_switch(
+@@ -663,6 +696,10 @@ fn apply_switch(
          // `Options::progress`). A long option for spec R.3's reason,
          // accepted on every command for the same wrapper reason.
          '-' if value == "progress" => o.progress = true,
@@ -61,10 +61,10 @@ index f5b750c..948a04a 100644
          // The engine has honoured an arbitrary ceiling all along
          // (`par2gen::CreatePlan::max_blocks_per_volume`); what was
 diff --git a/crates/parfast/src/create.rs b/crates/parfast/src/create.rs
-index 5b0d194..7d79a87 100644
+index 713d779..8d499de 100644
 --- a/crates/parfast/src/create.rs
 +++ b/crates/parfast/src/create.rs
-@@ -125,6 +125,23 @@ pub fn run_watched(opts: &Options, sink: &mut Sink, watch: &dyn CreateWatch) ->
+@@ -134,6 +134,23 @@ pub fn run_watched(opts: &Options, sink: &mut Sink, watch: &dyn CreateWatch) ->
          .map(|m| std::fs::metadata(&m.path).map(|md| md.len()).unwrap_or(0))
          .collect();
      let (block_size, raised_from) = block_size(opts, &lengths);
@@ -89,10 +89,10 @@ index 5b0d194..7d79a87 100644
      // size they did not ask for is worse than the refusal it replaces.
      if let Some(was) = raised_from {
 diff --git a/crates/parfast/src/help.rs b/crates/parfast/src/help.rs
-index 68d01ab..f197125 100644
+index ba30baf..af25a52 100644
 --- a/crates/parfast/src/help.rs
 +++ b/crates/parfast/src/help.rs
-@@ -140,6 +140,11 @@ Options: (create)
+@@ -154,6 +154,11 @@ Options: (create)
             : Stop rather than write over a file that is already there
               under one of this set's names. Off by default: creating a
               set again over the old one is ordinary use
@@ -104,7 +104,7 @@ index 68d01ab..f197125 100644
     @       : Process a listing of files specified in text (file) input
               (eg. @filelist.txt, or bare @ to read from stdin)
  
-@@ -155,7 +160,13 @@ Example:
+@@ -169,7 +174,13 @@ Example:
  
  /// `-V`.
  pub fn version_line() -> String {
@@ -120,10 +120,10 @@ index 68d01ab..f197125 100644
  
  /// `-VV`, the source this binary was built from.
 diff --git a/crates/parfast/src/lib.rs b/crates/parfast/src/lib.rs
-index b2084f0..7bcf937 100644
+index 7592141..98a8e2f 100644
 --- a/crates/parfast/src/lib.rs
 +++ b/crates/parfast/src/lib.rs
-@@ -680,6 +680,39 @@ mod switch_tests {
+@@ -769,6 +769,39 @@ mod switch_tests {
          }
      }
  

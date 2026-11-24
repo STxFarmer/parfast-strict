@@ -21,7 +21,7 @@ index 252ec84..e42a027 100644
                          });
                      }
 diff --git a/crates/nzbkit/tests/integration/par2gen_create_ntt.rs b/crates/nzbkit/tests/integration/par2gen_create_ntt.rs
-index 2009b9c..6d8e640 100644
+index eb48969..8187224 100644
 --- a/crates/nzbkit/tests/integration/par2gen_create_ntt.rs
 +++ b/crates/nzbkit/tests/integration/par2gen_create_ntt.rs
 @@ -220,6 +220,102 @@ fn the_mapped_transform_writes_the_fold_s_bytes_and_the_set_repairs() {

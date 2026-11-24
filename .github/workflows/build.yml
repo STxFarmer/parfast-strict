@@ -16,10 +16,10 @@ permissions:
   contents: read
 
 env:
-  # The upstream commit this repository's single patch commit sits on.
-  # Change it when the patch is rebased onto a newer upstream release.
-  UPSTREAM_COMMIT: 370da77
-  UPSTREAM_TAG: parfast-v1.7.1
+  # The upstream commit this repository's commits sit on. Change it
+  # when they are rebased onto a newer upstream release.
+  UPSTREAM_COMMIT: 4e9e204
+  UPSTREAM_TAG: parfast-v1.10.0
 
 jobs:
   build:
